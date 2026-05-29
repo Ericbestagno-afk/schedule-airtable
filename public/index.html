@@ -393,12 +393,15 @@
       try {
         const response = await fetch("/api/schedule");
 
-        if (!response.ok) {
-          throw new Error("Erreur API");
-        }
+if (!response.ok) {
+  throw new Error("Erreur API");
+}
 
-        events = await response.json();
-        renderSchedule();
+const data = await response.json();
+
+events = Array.isArray(data) ? data : data.events || [];
+
+renderSchedule();
 
       } catch (error) {
         document.getElementById("schedule-body").innerHTML = `

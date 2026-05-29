@@ -77,6 +77,7 @@
       align-items: center;
       justify-items: center;
       padding: 0 clamp(24px, 4vw, 70px);
+      overflow: hidden;
     }
 
     .logo {
@@ -84,18 +85,21 @@
       height: var(--logo-size);
       object-fit: contain;
       display: block;
-      align-self: center;
     }
 
     .logo.left {
       justify-self: start;
+      align-self: center;
     }
 
     .logo.right {
-      justify-self: end;
+      justify-self: center;
+      align-self: center;
     }
 
     .hidden-edit-btn {
+      width: var(--logo-size);
+      height: var(--logo-size);
       background: transparent;
       border: none;
       padding: 0;
@@ -103,9 +107,11 @@
       cursor: default;
       justify-self: end;
       align-self: center;
+
       display: flex;
       align-items: center;
       justify-content: center;
+      line-height: 0;
     }
 
     .hidden-edit-btn .logo {
@@ -528,6 +534,11 @@
       }
 
       .logo {
+        width: var(--logo-size);
+        height: var(--logo-size);
+      }
+
+      .hidden-edit-btn {
         width: var(--logo-size);
         height: var(--logo-size);
       }

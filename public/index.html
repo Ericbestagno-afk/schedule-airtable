@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Ouverture des Feed</title>
+  <title>Ouverture / Fermeture des Feed</title>
 
   <style>
     :root {
@@ -99,10 +99,22 @@
       font-weight: 900;
       letter-spacing: clamp(1px, 0.2vw, 3px);
       text-transform: uppercase;
-      line-height: 1;
+      line-height: 1.05;
       color: white;
-      white-space: nowrap;
+      white-space: normal;
       align-self: center;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .main-title span {
+      display: block;
+      width: 100%;
+      text-align: center;
     }
 
     /* =========================
@@ -641,7 +653,8 @@
         <img src="./logo-rg.png" alt="Roland Garros" class="logo left" />
 
         <div class="main-title">
-          OUVERTURE DES FEED
+          <span>OUVERTURE / FERMETURE</span>
+          <span>DES FEED</span>
         </div>
 
         <img src="./logo-rg.png" alt="Roland Garros" class="logo right" />

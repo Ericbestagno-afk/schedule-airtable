@@ -27,7 +27,6 @@
 
       --date-size: clamp(20px, 2.8vw, 44px);
 
-      /* Typo tableau réduite */
       --table-header-size: clamp(16px, 1.6vw, 28px);
       --table-text-size: clamp(16px, 1.5vw, 26px);
       --row-height: clamp(38px, 5vh, 54px);
@@ -96,6 +95,23 @@
       justify-self: end;
     }
 
+    .hidden-edit-btn {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: default;
+      justify-self: end;
+      align-self: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hidden-edit-btn .logo {
+      pointer-events: none;
+    }
+
     .main-title {
       height: 100%;
       text-align: center;
@@ -129,7 +145,7 @@
       min-height: var(--green-height);
       background: var(--green-rg);
       display: grid;
-      grid-template-columns: minmax(120px, 18vw) 1fr minmax(120px, 18vw);
+      grid-template-columns: minmax(150px, 18vw) 1fr minmax(120px, 18vw);
       align-items: center;
       padding: 0 clamp(16px, 3vw, 50px);
       border-top: 3px solid white;
@@ -170,6 +186,18 @@
 
     .sound-btn.sound-enabled {
       background: rgba(255, 255, 255, 0.22);
+    }
+
+    .edit-indicator {
+      display: none;
+      color: white;
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .edit-indicator.visible {
+      display: inline-block;
     }
 
     .date-zone {
@@ -316,6 +344,11 @@
       accent-color: var(--green-rg);
     }
 
+    .close-checkbox:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
     .close-time-input {
       width: 150px;
       max-width: 100%;
@@ -329,6 +362,12 @@
       font-family: Arial, Helvetica, sans-serif;
       margin: 0 auto;
       display: block;
+    }
+
+    .close-time-input:disabled {
+      background: #eeeeee;
+      color: #555555;
+      cursor: not-allowed;
     }
 
     .close-time-input:focus {
@@ -361,6 +400,10 @@
 
     .warning .close-time-input {
       color: #111111;
+    }
+
+    .warning .close-time-input:disabled {
+      color: #555555;
     }
 
     @keyframes blinkRed {
@@ -409,7 +452,7 @@
       }
 
       .green-info-bar {
-        grid-template-columns: 110px 1fr 110px;
+        grid-template-columns: 145px 1fr 110px;
         padding: 0 16px;
       }
 
@@ -418,6 +461,10 @@
         width: 40px;
         height: 40px;
         font-size: 22px;
+      }
+
+      .edit-indicator {
+        font-size: 26px;
       }
 
       .schedule th,
@@ -514,6 +561,10 @@
         width: 42px;
         height: 42px;
         font-size: 22px;
+      }
+
+      .edit-indicator {
+        font-size: 26px;
       }
 
       .date-zone {
@@ -654,6 +705,10 @@
         color: #111111;
       }
 
+      .warning .close-time-input:disabled {
+        color: #555555;
+      }
+
       .past {
         opacity: 0.45;
       }
@@ -738,7 +793,9 @@
           <span>DES FEED</span>
         </div>
 
-        <img src="./logo-rg.png" alt="Roland Garros" class="logo right" />
+        <button id="hidden-edit-btn" class="hidden-edit-btn" title="">
+          <img src="./logo-rg.png" alt="Roland Garros" class="logo right" />
+        </button>
       </header>
 
       <section class="green-info-bar">
@@ -750,6 +807,8 @@
           <button id="sound-btn" class="sound-btn" title="Activer le son">
             🔇
           </button>
+
+          <span id="edit-indicator" class="edit-indicator">✎</span>
         </div>
 
         <div class="date-zone" id="date-du-jour">
@@ -788,11 +847,33 @@
     let events = [];
     let isEditingCloseTime = false;
     let lastAutoScrolledRecordId = null;
+    let editMode = false;
 
     let soundEnabled = false;
     let alarmAudioContext = null;
     let alarmInterval = null;
     let alarmIsPlaying = false;
+
+    function setupHiddenEditButton() {
+      const hiddenButton = document.getElementById("hidden-edit-btn");
+      const indicator = document.getElementById("edit-indicator");
+
+      if (!hiddenButton || !indicator) {
+        return;
+      }
+
+      hiddenButton.addEventListener("click", () => {
+        editMode = !editMode;
+
+        if (editMode) {
+          indicator.classList.add("visible");
+        } else {
+          indicator.classList.remove("visible");
+        }
+
+        renderSchedule();
+      });
+    }
 
     function setupFullscreenButton() {
       const button = document.getElementById("fullscreen-btn");
@@ -1114,6 +1195,7 @@
               class="close-checkbox"
               data-id="${event.id}"
               ${event.close ? "checked" : ""}
+              ${editMode ? "" : "disabled"}
             />
           </td>
           <td>
@@ -1126,6 +1208,7 @@
               data-id="${event.id}"
               value="${event.heureFermeture || ""}"
               placeholder="HH:MM"
+              ${editMode ? "" : "disabled"}
             />
           </td>
         `;
@@ -1136,6 +1219,10 @@
         const closeTimeInput = tr.querySelector(".close-time-input");
 
         checkbox.addEventListener("change", async () => {
+          if (!editMode) {
+            return;
+          }
+
           const previousClose = event.close;
           const previousHeureFermeture = event.heureFermeture || "";
 
@@ -1171,14 +1258,28 @@
         });
 
         closeTimeInput.addEventListener("focus", () => {
+          if (!editMode) {
+            closeTimeInput.blur();
+            return;
+          }
+
           isEditingCloseTime = true;
         });
 
         closeTimeInput.addEventListener("input", () => {
+          if (!editMode) {
+            return;
+          }
+
           closeTimeInput.value = formatTimeInput(closeTimeInput.value);
         });
 
         closeTimeInput.addEventListener("blur", async () => {
+          if (!editMode) {
+            isEditingCloseTime = false;
+            return;
+          }
+
           const previousHeureFermeture = event.heureFermeture || "";
           const fermetureValue = closeTimeInput.value.trim();
 
@@ -1200,6 +1301,10 @@
         });
 
         closeTimeInput.addEventListener("keydown", (e) => {
+          if (!editMode) {
+            return;
+          }
+
           if (e.key === "Enter") {
             e.preventDefault();
             closeTimeInput.blur();
@@ -1224,6 +1329,7 @@
 
     setupFullscreenButton();
     setupSoundButton();
+    setupHiddenEditButton();
     updateDateAndClock();
     loadSchedule();
 

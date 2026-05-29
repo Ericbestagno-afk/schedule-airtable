@@ -76,7 +76,10 @@
       grid-template-columns: minmax(180px, 20vw) 1fr minmax(180px, 20vw);
       align-items: center;
       justify-items: center;
-      padding: clamp(12px, 2vh, 24px) clamp(24px, 4vw, 70px);
+
+      /* espace haut réduit, espace bas conservé */
+      padding: clamp(4px, 0.8vh, 10px) clamp(24px, 4vw, 70px) clamp(12px, 2vh, 24px);
+
       overflow: hidden;
     }
 
@@ -454,7 +457,7 @@
 
       .top-band {
         grid-template-columns: 110px 1fr 110px;
-        padding: clamp(10px, 2vh, 18px) 16px;
+        padding: 4px 16px 12px;
       }
 
       .green-info-bar {
@@ -530,7 +533,7 @@
         min-height: 110px;
         grid-template-columns: 78px 1fr 78px;
         align-items: center;
-        padding: 12px;
+        padding: 4px 12px 12px;
       }
 
       .logo {
@@ -777,7 +780,7 @@
 
       .top-band {
         grid-template-columns: 125px 1fr 125px;
-        padding: 10px 16px;
+        padding: 4px 16px 10px;
       }
 
       .close-checkbox {

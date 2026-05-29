@@ -18,9 +18,10 @@
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
 
-      --orange-height: clamp(95px, 16vh, 170px);
-      --logo-size: clamp(60px, 8vw, 115px);
-      --title-size: clamp(30px, 4vw, 62px);
+      /* Bandeau orange ajusté */
+      --orange-height: clamp(105px, 16vh, 175px);
+      --logo-size: clamp(78px, 9vw, 135px);
+      --title-size: clamp(28px, 3.2vw, 54px);
 
       --green-height: clamp(48px, 7vh, 76px);
       --gap-after-green: clamp(8px, 2vh, 25px);
@@ -72,9 +73,9 @@
       min-height: var(--orange-height);
       background: var(--orange-rg);
       display: grid;
-      grid-template-columns: minmax(70px, 14vw) 1fr minmax(70px, 14vw);
+      grid-template-columns: minmax(120px, 16vw) 1fr minmax(120px, 16vw);
       align-items: center;
-      padding: clamp(6px, 1.2vw, 14px) clamp(16px, 3vw, 45px);
+      padding: clamp(6px, 1vw, 12px) clamp(24px, 4vw, 70px);
     }
 
     .logo {
@@ -97,9 +98,9 @@
       text-align: center;
       font-size: var(--title-size);
       font-weight: 900;
-      letter-spacing: clamp(1px, 0.2vw, 3px);
+      letter-spacing: clamp(1px, 0.15vw, 2px);
       text-transform: uppercase;
-      line-height: 1.05;
+      line-height: 0.95;
       color: white;
       white-space: normal;
       align-self: center;
@@ -337,11 +338,11 @@
 
     @media (max-width: 900px) {
       :root {
-        --orange-height: clamp(90px, 16vh, 150px);
+        --orange-height: clamp(95px, 15vh, 150px);
         --green-height: clamp(42px, 6vh, 60px);
         --gap-after-green: clamp(6px, 1.5vh, 18px);
-        --logo-size: clamp(58px, 12vw, 90px);
-        --title-size: clamp(24px, 6vw, 42px);
+        --logo-size: clamp(70px, 12vw, 95px);
+        --title-size: clamp(22px, 5vw, 38px);
         --date-size: clamp(16px, 3.6vw, 24px);
         --table-header-size: clamp(15px, 4vw, 24px);
         --table-text-size: clamp(15px, 3.8vw, 22px);
@@ -349,7 +350,7 @@
       }
 
       .top-band {
-        grid-template-columns: 80px 1fr 80px;
+        grid-template-columns: 90px 1fr 90px;
         padding: 10px 16px;
       }
 
@@ -384,7 +385,7 @@
         --green-height: auto;
         --gap-after-green: 8px;
         --logo-size: 58px;
-        --title-size: 28px;
+        --title-size: 22px;
         --date-size: 18px;
         --table-header-size: 16px;
         --table-text-size: 18px;
@@ -595,11 +596,11 @@
 
     @media (min-width: 1600px) {
       :root {
-        --orange-height: clamp(130px, 15vh, 190px);
+        --orange-height: clamp(130px, 15vh, 185px);
         --green-height: clamp(70px, 7vh, 95px);
         --gap-after-green: clamp(15px, 2vh, 35px);
-        --logo-size: clamp(105px, 7vw, 140px);
-        --title-size: clamp(52px, 4vw, 78px);
+        --logo-size: clamp(125px, 7.5vw, 160px);
+        --title-size: clamp(44px, 3.3vw, 64px);
         --date-size: clamp(38px, 2.8vw, 56px);
         --table-header-size: clamp(32px, 2vw, 44px);
         --table-text-size: clamp(30px, 1.8vw, 40px);
@@ -625,7 +626,7 @@
         --green-height: 42px;
         --gap-after-green: 8px;
         --logo-size: 64px;
-        --title-size: 32px;
+        --title-size: 28px;
         --date-size: 18px;
         --table-header-size: 18px;
         --table-text-size: 18px;

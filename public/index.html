@@ -64,10 +64,6 @@
       flex-direction: column;
     }
 
-    /* =========================
-       BANDEAU ORANGE
-    ========================= */
-
     .top-band {
       height: var(--orange-height);
       min-height: var(--orange-height);
@@ -107,7 +103,6 @@
       cursor: default;
       justify-self: end;
       align-self: center;
-
       display: flex;
       align-items: center;
       justify-content: center;
@@ -128,7 +123,6 @@
       line-height: 0.95;
       color: white;
       white-space: normal;
-
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -141,10 +135,6 @@
       width: 100%;
       text-align: center;
     }
-
-    /* =========================
-       BANDEAU VERT
-    ========================= */
 
     .green-info-bar {
       height: var(--green-height);
@@ -228,10 +218,6 @@
       white-space: nowrap;
     }
 
-    /* =========================
-       TABLEAU
-    ========================= */
-
     .table-zone {
       flex: 1;
       background: white;
@@ -293,9 +279,11 @@
       background: var(--grey-line-alt);
     }
 
-    /* Ligne active sans bordure verte */
-    .active-row td {
-      outline: none;
+    .schedule tr,
+    .schedule td,
+    .schedule th {
+      outline: none !important;
+      box-shadow: none !important;
     }
 
     .overdue-unclosed td {
@@ -310,6 +298,15 @@
 
     .overdue-unclosed .close-time-input:disabled {
       color: #d00000 !important;
+    }
+
+    .pending-remove {
+      opacity: 0.55;
+      transition: opacity 0.3s ease;
+    }
+
+    .pending-remove td {
+      text-decoration: line-through;
     }
 
     .col-time,
@@ -391,7 +388,7 @@
     }
 
     .close-time-input:focus {
-      outline: 3px solid var(--blue-rg);
+      outline: 3px solid var(--blue-rg) !important;
     }
 
     .saving {
@@ -404,10 +401,6 @@
       font-size: clamp(18px, 1.8vw, 26px);
       padding: 24px;
     }
-
-    /* =========================
-       CLIGNOTEMENT ROUGE
-    ========================= */
 
     .warning {
       animation: blinkRed 0.8s infinite;
@@ -448,10 +441,6 @@
     .past .close-time-input {
       opacity: 1;
     }
-
-    /* =========================
-       TABLETTES
-    ========================= */
 
     @media (max-width: 900px) {
       :root {
@@ -501,10 +490,6 @@
         width: 115px;
       }
     }
-
-    /* =========================
-       TÉLÉPHONE
-    ========================= */
 
     @media (max-width: 600px) {
       :root {
@@ -623,10 +608,6 @@
         display: none;
       }
 
-      .schedule th {
-        position: static;
-      }
-
       .schedule tbody {
         display: block;
         width: 100%;
@@ -662,16 +643,6 @@
 
       .schedule td:last-child {
         border-bottom: none;
-      }
-
-      .schedule td:nth-child(1),
-      .schedule td:nth-child(2),
-      .schedule td:nth-child(3),
-      .schedule td:nth-child(4),
-      .schedule td:nth-child(5) {
-        width: 100%;
-        white-space: normal;
-        text-align: left;
       }
 
       .schedule td:nth-child(1)::before {
@@ -717,38 +688,15 @@
         margin: 0;
       }
 
-      .warning {
-        animation: blinkRed 0.8s infinite;
-      }
-
       .warning td,
       .warning td::before {
         color: white;
       }
 
-      .warning .close-time-input {
-        color: #111111;
-      }
-
-      .warning .close-time-input:disabled {
-        color: #555555;
-      }
-
       .past {
         opacity: 0.45;
       }
-
-      .empty-message {
-        display: block;
-        font-size: 20px;
-        padding: 24px 12px;
-        text-align: center;
-      }
     }
-
-    /* =========================
-       TRÈS GRANDS ÉCRANS TV
-    ========================= */
 
     @media (min-width: 1600px) {
       :root {
@@ -771,10 +719,6 @@
         width: 150px;
       }
     }
-
-    /* =========================
-       ÉCRANS BAS EN HAUTEUR
-    ========================= */
 
     @media (max-height: 650px) {
       :root {
@@ -880,6 +824,8 @@
     let alarmInterval = null;
     let alarmIsPlaying = false;
 
+    const pendingRemovalIds = new Set();
+
     function getTodayParis() {
       return new Intl.DateTimeFormat("fr-CA", {
         timeZone: "Europe/Paris",
@@ -887,6 +833,34 @@
         month: "2-digit",
         day: "2-digit"
       }).format(new Date());
+    }
+
+    function isOldEvent(event) {
+      return event.date && event.date < getTodayParis();
+    }
+
+    function scheduleRemoveOldEvent(event) {
+      if (!event || !event.id || !isOldEvent(event)) {
+        return;
+      }
+
+      if (pendingRemovalIds.has(event.id)) {
+        return;
+      }
+
+      pendingRemovalIds.add(event.id);
+
+      const row = document.querySelector(`tr[data-id="${event.id}"]`);
+
+      if (row) {
+        row.classList.add("pending-remove");
+      }
+
+      setTimeout(() => {
+        events = events.filter(item => item.id !== event.id);
+        pendingRemovalIds.delete(event.id);
+        renderSchedule();
+      }, 3000);
     }
 
     function setupHiddenEditButton() {
@@ -1212,6 +1186,10 @@
         const tr = document.createElement("tr");
         tr.dataset.id = event.id;
 
+        if (pendingRemovalIds.has(event.id)) {
+          tr.classList.add("pending-remove");
+        }
+
         if (isLessThan2Minutes) {
           tr.classList.add("warning");
           hasWarningLine = true;
@@ -1227,7 +1205,6 @@
         }
 
         if (event.id === activeRecordId) {
-          tr.classList.add("active-row");
           activeRowElement = tr;
         }
 
@@ -1273,7 +1250,6 @@
           const previousHeureFermeture = event.heureFermeture || "";
 
           const isChecked = checkbox.checked;
-
           let fermetureValue = closeTimeInput.value.trim();
 
           if (isChecked && !fermetureValue) {
@@ -1294,9 +1270,8 @@
             event.close = isChecked;
             event.heureFermeture = fermetureValue;
 
-            if (isChecked && event.date && event.date < getTodayParis()) {
-              events = events.filter(item => item.id !== event.id);
-              renderSchedule();
+            if (isOldEvent(event) && (isChecked || fermetureValue)) {
+              scheduleRemoveOldEvent(event);
             }
 
           } catch (error) {
@@ -1341,13 +1316,19 @@
 
             event.heureFermeture = fermetureValue;
 
+            if (isOldEvent(event) && fermetureValue) {
+              scheduleRemoveOldEvent(event);
+            } else {
+              renderSchedule();
+            }
+
           } catch (error) {
             closeTimeInput.value = previousHeureFermeture;
+            renderSchedule();
 
           } finally {
             tr.classList.remove("saving");
             isEditingCloseTime = false;
-            renderSchedule();
           }
         });
 

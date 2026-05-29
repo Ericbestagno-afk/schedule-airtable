@@ -491,23 +491,32 @@
       }
     }
 
+    /* =========================
+       TÉLÉPHONE
+    ========================= */
+
     @media (max-width: 600px) {
       :root {
         --screen-padding: 0px;
         --orange-height: auto;
         --green-height: auto;
         --gap-after-green: 0px;
-        --logo-size: 70px;
-        --title-size: 21px;
-        --date-size: 18px;
+        --logo-size: 54px;
+        --title-size: 17px;
+        --date-size: 16px;
         --table-header-size: 16px;
-        --table-text-size: 18px;
+        --table-text-size: 16px;
         --row-height: auto;
       }
 
       html,
       body {
-        overflow: auto;
+        width: 100%;
+        height: auto;
+        min-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background: white;
       }
 
       .screen {
@@ -515,9 +524,11 @@
         min-height: 100vh;
         height: auto;
         padding: 0;
+        background: white;
       }
 
       .container {
+        width: 100%;
         min-height: 100vh;
         height: auto;
         border: none;
@@ -526,10 +537,10 @@
 
       .top-band {
         height: auto;
-        min-height: 110px;
-        grid-template-columns: 78px 1fr 78px;
+        min-height: 82px;
+        grid-template-columns: 58px 1fr 58px;
         align-items: center;
-        padding: 0 12px 8px;
+        padding: 6px 8px;
       }
 
       .logo {
@@ -544,18 +555,18 @@
 
       .main-title {
         font-size: var(--title-size);
-        white-space: normal;
         line-height: 1.05;
+        letter-spacing: 0.5px;
         text-align: center;
       }
 
       .green-info-bar {
         height: auto;
-        min-height: 58px;
+        min-height: 78px;
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto;
-        gap: 4px;
-        padding: 8px 12px;
+        gap: 5px;
+        padding: 8px 10px;
         border-top: 2px solid white;
       }
 
@@ -563,18 +574,19 @@
         grid-column: 1;
         grid-row: 3;
         justify-self: center;
-        margin-top: 4px;
+        margin-top: 2px;
       }
 
       .fullscreen-btn,
       .sound-btn {
-        width: 42px;
-        height: 42px;
-        font-size: 22px;
+        width: 36px;
+        height: 36px;
+        font-size: 19px;
+        border-radius: 7px;
       }
 
       .edit-indicator {
-        font-size: 26px;
+        font-size: 22px;
       }
 
       .date-zone {
@@ -583,25 +595,27 @@
         font-size: var(--date-size);
         white-space: normal;
         line-height: 1.15;
+        text-align: center;
       }
 
       .clock-zone {
         grid-column: 1;
         grid-row: 2;
         text-align: center;
-        font-size: 22px;
+        font-size: 20px;
       }
 
       .table-zone {
         padding-top: 0;
         overflow-y: visible;
         overflow-x: hidden;
+        background: white;
       }
 
       .schedule {
         display: block;
         width: 100%;
-        padding: 0 8px 12px 8px;
+        padding: 8px 8px 14px;
       }
 
       .schedule thead {
@@ -618,6 +632,8 @@
         width: 100%;
         margin-bottom: 10px;
         border: 2px solid white;
+        border-radius: 8px;
+        overflow: hidden;
         background: var(--grey-line);
       }
 
@@ -627,74 +643,102 @@
 
       .schedule td {
         display: grid;
-        grid-template-columns: 46% 54%;
-        width: 100%;
+        grid-template-columns: 42% 58%;
+        align-items: center;
+        width: 100% !important;
         height: auto;
-        min-height: 42px;
+        min-height: 40px;
         font-size: var(--table-text-size);
-        padding: 10px 12px;
+        padding: 8px 10px;
         border: none;
         border-bottom: 1px solid white;
-        white-space: normal;
+        white-space: normal !important;
         overflow: visible;
         text-overflow: unset;
-        text-align: left;
+        text-align: left !important;
+        line-height: 1.15;
       }
 
       .schedule td:last-child {
         border-bottom: none;
       }
 
-      .schedule td:nth-child(1)::before {
-        content: "Heure d’ouverture";
+      .schedule td::before {
         font-weight: 900;
         color: var(--blue-rg);
+        padding-right: 8px;
+      }
+
+      .schedule td:nth-child(1)::before {
+        content: "Ouverture";
       }
 
       .schedule td:nth-child(2)::before {
         content: "Court";
-        font-weight: 900;
-        color: var(--blue-rg);
       }
 
       .schedule td:nth-child(3)::before {
         content: "Feed";
-        font-weight: 900;
-        color: var(--blue-rg);
       }
 
       .schedule td:nth-child(4)::before {
         content: "Close";
-        font-weight: 900;
-        color: var(--blue-rg);
       }
 
       .schedule td:nth-child(5)::before {
-        content: "Heure de fermeture";
-        font-weight: 900;
-        color: var(--blue-rg);
+        content: "Fermeture";
       }
 
       .close-checkbox {
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         justify-self: start;
       }
 
       .close-time-input {
-        width: 130px;
-        font-size: 22px;
+        width: 110px;
+        font-size: 18px;
         justify-self: start;
         margin: 0;
+        padding: 4px 6px;
+      }
+
+      .warning {
+        animation: blinkRed 0.8s infinite;
       }
 
       .warning td,
       .warning td::before {
-        color: white;
+        color: white !important;
+      }
+
+      .warning .close-time-input {
+        color: #111111 !important;
+      }
+
+      .warning .close-time-input:disabled {
+        color: #555555 !important;
+      }
+
+      .overdue-unclosed td,
+      .overdue-unclosed td::before {
+        color: #d00000 !important;
+        font-weight: 900;
       }
 
       .past {
         opacity: 0.45;
+      }
+
+      .pending-remove {
+        opacity: 0.55;
+      }
+
+      .empty-message {
+        display: block;
+        font-size: 18px;
+        padding: 24px 12px;
+        text-align: center;
       }
     }
 

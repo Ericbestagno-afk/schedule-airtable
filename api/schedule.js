@@ -18,17 +18,29 @@ export default async function handler(req, res) {
     const airtableBaseUrl =
       `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}`;
 
-    /**
-     * MISE À JOUR D'UNE LIGNE
-     * Utilisé quand on coche/décoche Close
-     * ou quand on modifie Heure de fermeture à la main.
-     */
+    // =========================
+    // PATCH : mise à jour Close / Heure de fermeture
+    // =========================
     if (req.method === "PATCH") {
-      const { recordId, close, heureFermeture } = req.body || {};
+      let body = req.body;
+
+      if (typeof body === "string") {
+        try {
+          body = JSON.parse(body);
+        } catch (error) {
+          return res.status(400).json({
+            error: "Body JSON invalide",
+            rawBody: req.body
+          });
+        }
+      }
+
+      const { recordId, close, heureFermeture } = body || {};
 
       if (!recordId) {
         return res.status(400).json({
-          error: "recordId manquant"
+          error: "recordId manquant",
+          receivedBody: body
         });
       }
 
@@ -40,6 +52,13 @@ export default async function handler(req, res) {
 
       if (typeof heureFermeture === "string") {
         fieldsToUpdate["Heure de fermeture"] = heureFermeture;
+      }
+
+      if (Object.keys(fieldsToUpdate).length === 0) {
+        return res.status(400).json({
+          error: "Aucun champ à mettre à jour",
+          receivedBody: body
+        });
       }
 
       const updateResponse = await fetch(`${airtableBaseUrl}/${recordId}`, {
@@ -58,7 +77,9 @@ export default async function handler(req, res) {
       if (!updateResponse.ok) {
         return res.status(updateResponse.status).json({
           error: "Erreur Airtable lors de la mise à jour",
-          details: updateData
+          status: updateResponse.status,
+          sentFields: fieldsToUpdate,
+          airtableMessage: updateData
         });
       }
 
@@ -68,9 +89,12 @@ export default async function handler(req, res) {
       });
     }
 
-    /**
-     * LECTURE DU SCHEDULE DU JOUR
-     */
+    // =========================
+    // GET : lecture du schedule
+    // Récupère :
+    // - les lignes du jour
+    // - les anciennes lignes non cochées
+    // =========================
     if (req.method === "GET") {
       const todayParis = new Intl.DateTimeFormat("fr-CA", {
         timeZone: "Europe/Paris",
@@ -79,13 +103,23 @@ export default async function handler(req, res) {
         day: "2-digit"
       }).format(new Date());
 
-      const formula = encodeURIComponent(`IS_SAME({Date}, '${todayParis}', 'day')`);
+      const formula = encodeURIComponent(`
+        OR(
+          IS_SAME({Date}, '${todayParis}', 'day'),
+          AND(
+            IS_BEFORE({Date}, '${todayParis}'),
+            NOT({Close})
+          )
+        )
+      `);
 
       const url =
         `${airtableBaseUrl}` +
         `?filterByFormula=${formula}` +
-        `&sort%5B0%5D%5Bfield%5D=Heure` +
-        `&sort%5B0%5D%5Bdirection%5D=asc`;
+        `&sort%5B0%5D%5Bfield%5D=Date` +
+        `&sort%5B0%5D%5Bdirection%5D=asc` +
+        `&sort%5B1%5D%5Bfield%5D=Heure` +
+        `&sort%5B1%5D%5Bdirection%5D=asc`;
 
       const airtableResponse = await fetch(url, {
         headers: {
@@ -133,12 +167,13 @@ export default async function handler(req, res) {
     }
 
     return res.status(405).json({
-      error: "Méthode non autorisée"
+      error: "Méthode non autorisée",
+      method: req.method
     });
 
   } catch (error) {
     return res.status(500).json({
-      error: "Erreur dans api/schedule.js",
+      error: "Erreur serveur dans api/schedule.js",
       message: error.message
     });
   }

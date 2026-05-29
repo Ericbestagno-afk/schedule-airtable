@@ -232,7 +232,7 @@
     }
 
     .close-time-input {
-      width: 120px;
+      width: 135px;
       max-width: 100%;
       font-size: var(--table-text-size);
       font-weight: 700;
@@ -299,7 +299,7 @@
     }
 
     /* =========================
-       ÉCRANS PETITS / TABLETTES
+       TABLETTES
     ========================= */
 
     @media (max-width: 900px) {
@@ -333,7 +333,7 @@
     }
 
     /* =========================
-       VERSION TÉLÉPHONE
+       TÉLÉPHONE
     ========================= */
 
     @media (max-width: 600px) {
@@ -600,7 +600,6 @@
   <div class="screen">
     <div class="container">
 
-      <!-- Bandeau orange -->
       <header class="top-band">
         <img src="./logo-rg.png" alt="Roland Garros" class="logo left" />
 
@@ -611,7 +610,6 @@
         <img src="./logo-rg.png" alt="Roland Garros" class="logo right" />
       </header>
 
-      <!-- Bandeau vert -->
       <section class="green-info-bar">
         <div></div>
 
@@ -624,7 +622,6 @@
         </div>
       </section>
 
-      <!-- Tableau -->
       <main class="table-zone">
         <table class="schedule">
           <thead>
@@ -650,6 +647,7 @@
 
   <script>
     let events = [];
+    let isEditingCloseTime = false;
 
     function updateDateAndClock() {
       const now = new Date();
@@ -739,6 +737,10 @@
     }
 
     function renderSchedule() {
+      if (isEditingCloseTime) {
+        return;
+      }
+
       const tbody = document.getElementById("schedule-body");
       tbody.innerHTML = "";
 
@@ -786,11 +788,10 @@
           </td>
           <td>
             <input
-              type="text"
+              type="time"
               class="close-time-input"
               data-id="${event.id}"
               value="${event.heureFermeture || ""}"
-              placeholder="HH:MM"
             />
           </td>
         `;
@@ -806,7 +807,7 @@
 
           const isChecked = checkbox.checked;
 
-          let fermetureValue = closeTimeInput.value.trim();
+          let fermetureValue = closeTimeInput.value;
 
           if (isChecked && !fermetureValue) {
             fermetureValue = getCurrentParisTime();
@@ -835,9 +836,13 @@
           }
         });
 
-        closeTimeInput.addEventListener("change", async () => {
+        closeTimeInput.addEventListener("focus", () => {
+          isEditingCloseTime = true;
+        });
+
+        closeTimeInput.addEventListener("blur", async () => {
           const previousHeureFermeture = event.heureFermeture || "";
-          const fermetureValue = closeTimeInput.value.trim();
+          const fermetureValue = closeTimeInput.value;
 
           try {
             tr.classList.add("saving");
@@ -851,6 +856,21 @@
 
           } finally {
             tr.classList.remove("saving");
+            isEditingCloseTime = false;
+            renderSchedule();
+          }
+        });
+
+        closeTimeInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            closeTimeInput.blur();
+          }
+
+          if (e.key === "Escape") {
+            e.preventDefault();
+            closeTimeInput.value = event.heureFermeture || "";
+            closeTimeInput.blur();
           }
         });
       });
@@ -860,8 +880,18 @@
     loadSchedule();
 
     setInterval(updateDateAndClock, 1000);
-    setInterval(renderSchedule, 1000);
-    setInterval(loadSchedule, 60000);
+
+    setInterval(() => {
+      if (!isEditingCloseTime) {
+        renderSchedule();
+      }
+    }, 1000);
+
+    setInterval(() => {
+      if (!isEditingCloseTime) {
+        loadSchedule();
+      }
+    }, 60000);
   </script>
 </body>
 </html>

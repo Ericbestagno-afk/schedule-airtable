@@ -18,7 +18,6 @@
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
 
-      /* Bandeau orange réduit et mieux centré */
       --orange-height: clamp(95px, 16vh, 170px);
       --logo-size: clamp(60px, 8vw, 115px);
       --title-size: clamp(30px, 4vw, 62px);
@@ -157,8 +156,6 @@
     .schedule {
       width: 100%;
       border-collapse: collapse;
-
-      /* Colonnes dynamiques selon le contenu */
       table-layout: auto;
     }
 
@@ -186,6 +183,7 @@
       font-weight: 700;
       overflow: hidden;
       text-overflow: ellipsis;
+      vertical-align: middle;
     }
 
     .schedule tbody tr {
@@ -196,11 +194,10 @@
       background: var(--grey-line-alt);
     }
 
-    /* Colonnes auto :
-       Heure et Court prennent le minimum utile,
-       Feed prend tout l’espace restant */
     .col-time,
-    .col-court {
+    .col-court,
+    .col-close,
+    .col-close-time {
       width: 1%;
       white-space: nowrap;
     }
@@ -210,7 +207,9 @@
     }
 
     .schedule td:nth-child(1),
-    .schedule td:nth-child(2) {
+    .schedule td:nth-child(2),
+    .schedule td:nth-child(4),
+    .schedule td:nth-child(5) {
       width: 1%;
       white-space: nowrap;
     }
@@ -218,6 +217,38 @@
     .schedule td:nth-child(3) {
       width: auto;
       white-space: normal;
+    }
+
+    .col-close,
+    .schedule td:nth-child(4) {
+      text-align: center;
+    }
+
+    .close-checkbox {
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      accent-color: var(--green-rg);
+    }
+
+    .close-time-input {
+      width: 120px;
+      max-width: 100%;
+      font-size: var(--table-text-size);
+      font-weight: 700;
+      padding: 4px 8px;
+      border: 2px solid #ffffff;
+      background: #ffffff;
+      color: #111111;
+      text-align: center;
+    }
+
+    .close-time-input:focus {
+      outline: 3px solid var(--blue-rg);
+    }
+
+    .saving {
+      opacity: 0.6;
     }
 
     .empty-message {
@@ -240,6 +271,10 @@
       font-weight: 900;
     }
 
+    .warning .close-time-input {
+      color: #111111;
+    }
+
     @keyframes blinkRed {
       0% {
         background: #9b0000;
@@ -256,6 +291,11 @@
 
     .past {
       opacity: 0.35;
+    }
+
+    .past .close-checkbox,
+    .past .close-time-input {
+      opacity: 1;
     }
 
     /* =========================
@@ -412,7 +452,7 @@
 
       .schedule td {
         display: grid;
-        grid-template-columns: 42% 58%;
+        grid-template-columns: 46% 54%;
         width: 100%;
         height: auto;
         min-height: 42px;
@@ -423,6 +463,7 @@
         white-space: normal;
         overflow: visible;
         text-overflow: unset;
+        text-align: left;
       }
 
       .schedule td:last-child {
@@ -431,7 +472,9 @@
 
       .schedule td:nth-child(1),
       .schedule td:nth-child(2),
-      .schedule td:nth-child(3) {
+      .schedule td:nth-child(3),
+      .schedule td:nth-child(4),
+      .schedule td:nth-child(5) {
         width: 100%;
         white-space: normal;
       }
@@ -454,6 +497,28 @@
         color: var(--blue-rg);
       }
 
+      .schedule td:nth-child(4)::before {
+        content: "Close";
+        font-weight: 900;
+        color: var(--blue-rg);
+      }
+
+      .schedule td:nth-child(5)::before {
+        content: "Heure de fermeture";
+        font-weight: 900;
+        color: var(--blue-rg);
+      }
+
+      .close-checkbox {
+        width: 30px;
+        height: 30px;
+      }
+
+      .close-time-input {
+        width: 100%;
+        font-size: 18px;
+      }
+
       .warning {
         animation: blinkRed 0.8s infinite;
       }
@@ -461,6 +526,10 @@
       .warning td,
       .warning td::before {
         color: white;
+      }
+
+      .warning .close-time-input {
+        color: #111111;
       }
 
       .past {
@@ -491,6 +560,10 @@
         --table-text-size: clamp(30px, 1.8vw, 40px);
         --row-height: clamp(60px, 6vh, 80px);
       }
+
+      .close-time-input {
+        width: 150px;
+      }
     }
 
     /* =========================
@@ -508,6 +581,16 @@
         --table-header-size: 18px;
         --table-text-size: 18px;
         --row-height: 38px;
+      }
+
+      .close-checkbox {
+        width: 22px;
+        height: 22px;
+      }
+
+      .close-time-input {
+        width: 90px;
+        font-size: 16px;
       }
     }
   </style>
@@ -549,12 +632,14 @@
               <th class="col-time">Heure d’ouverture</th>
               <th class="col-court">Court</th>
               <th class="col-feed">Feed</th>
+              <th class="col-close">Close</th>
+              <th class="col-close-time">Heure de fermeture</th>
             </tr>
           </thead>
 
           <tbody id="schedule-body">
             <tr>
-              <td colspan="3" class="empty-message">Chargement...</td>
+              <td colspan="5" class="empty-message">Chargement...</td>
             </tr>
           </tbody>
         </table>
@@ -586,6 +671,48 @@
       document.getElementById("heure-actuelle").textContent = timeFormatted;
     }
 
+    function getCurrentParisTime() {
+      const now = new Date();
+
+      return now.toLocaleTimeString("fr-FR", {
+        timeZone: "Europe/Paris",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      });
+    }
+
+    async function updateCloseStatus(recordId, close, heureFermeture) {
+      const response = await fetch("/api/schedule", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          recordId,
+          close,
+          heureFermeture
+        })
+      });
+
+      if (!response.ok) {
+        let errorDetails = null;
+
+        try {
+          errorDetails = await response.json();
+        } catch (error) {
+          errorDetails = { error: "Erreur inconnue" };
+        }
+
+        console.error(errorDetails);
+        alert("Erreur lors de la mise à jour Airtable");
+
+        throw new Error("Erreur mise à jour Airtable");
+      }
+
+      return response.json();
+    }
+
     async function loadSchedule() {
       try {
         const response = await fetch("/api/schedule");
@@ -596,9 +723,6 @@
 
         const data = await response.json();
 
-        // Compatible avec :
-        // 1. un tableau direct : [...]
-        // 2. un objet API : { ok: true, events: [...] }
         events = Array.isArray(data) ? data : data.events || [];
 
         renderSchedule();
@@ -606,7 +730,7 @@
       } catch (error) {
         document.getElementById("schedule-body").innerHTML = `
           <tr>
-            <td colspan="3" class="empty-message">
+            <td colspan="5" class="empty-message">
               Erreur de chargement du schedule
             </td>
           </tr>
@@ -621,7 +745,7 @@
       if (!events.length) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="3" class="empty-message">
+            <td colspan="5" class="empty-message">
               Aucun feed prévu aujourd'hui
             </td>
           </tr>
@@ -652,9 +776,83 @@
           <td>${event.heure || ""}</td>
           <td>${event.court || ""}</td>
           <td>${event.feed || ""}</td>
+          <td>
+            <input
+              type="checkbox"
+              class="close-checkbox"
+              data-id="${event.id}"
+              ${event.close ? "checked" : ""}
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              class="close-time-input"
+              data-id="${event.id}"
+              value="${event.heureFermeture || ""}"
+              placeholder="HH:MM"
+            />
+          </td>
         `;
 
         tbody.appendChild(tr);
+
+        const checkbox = tr.querySelector(".close-checkbox");
+        const closeTimeInput = tr.querySelector(".close-time-input");
+
+        checkbox.addEventListener("change", async () => {
+          const previousClose = event.close;
+          const previousHeureFermeture = event.heureFermeture || "";
+
+          const isChecked = checkbox.checked;
+
+          let fermetureValue = closeTimeInput.value.trim();
+
+          if (isChecked && !fermetureValue) {
+            fermetureValue = getCurrentParisTime();
+            closeTimeInput.value = fermetureValue;
+          }
+
+          if (!isChecked) {
+            fermetureValue = "";
+            closeTimeInput.value = "";
+          }
+
+          try {
+            tr.classList.add("saving");
+
+            await updateCloseStatus(event.id, isChecked, fermetureValue);
+
+            event.close = isChecked;
+            event.heureFermeture = fermetureValue;
+
+          } catch (error) {
+            checkbox.checked = previousClose;
+            closeTimeInput.value = previousHeureFermeture;
+
+          } finally {
+            tr.classList.remove("saving");
+          }
+        });
+
+        closeTimeInput.addEventListener("change", async () => {
+          const previousHeureFermeture = event.heureFermeture || "";
+          const fermetureValue = closeTimeInput.value.trim();
+
+          try {
+            tr.classList.add("saving");
+
+            await updateCloseStatus(event.id, checkbox.checked, fermetureValue);
+
+            event.heureFermeture = fermetureValue;
+
+          } catch (error) {
+            closeTimeInput.value = previousHeureFermeture;
+
+          } finally {
+            tr.classList.remove("saving");
+          }
+        });
       });
     }
 

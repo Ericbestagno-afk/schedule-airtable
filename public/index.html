@@ -18,10 +18,10 @@
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
 
-      /* Bandeau orange ajusté */
-      --orange-height: clamp(105px, 16vh, 175px);
-      --logo-size: clamp(78px, 9vw, 135px);
-      --title-size: clamp(28px, 3.2vw, 54px);
+      /* Bandeau orange */
+      --orange-height: clamp(120px, 17vh, 190px);
+      --logo-size: clamp(100px, 10vw, 165px);
+      --title-size: clamp(28px, 3.1vw, 52px);
 
       --green-height: clamp(48px, 7vh, 76px);
       --gap-after-green: clamp(8px, 2vh, 25px);
@@ -73,9 +73,10 @@
       min-height: var(--orange-height);
       background: var(--orange-rg);
       display: grid;
-      grid-template-columns: minmax(120px, 16vw) 1fr minmax(120px, 16vw);
+      grid-template-columns: minmax(160px, 18vw) 1fr minmax(160px, 18vw);
       align-items: center;
-      padding: clamp(6px, 1vw, 12px) clamp(24px, 4vw, 70px);
+      justify-items: center;
+      padding: 0 clamp(24px, 4vw, 70px);
     }
 
     .logo {
@@ -95,6 +96,7 @@
     }
 
     .main-title {
+      height: 100%;
       text-align: center;
       font-size: var(--title-size);
       font-weight: 900;
@@ -103,7 +105,6 @@
       line-height: 0.95;
       color: white;
       white-space: normal;
-      align-self: center;
 
       display: flex;
       flex-direction: column;
@@ -238,7 +239,6 @@
       white-space: normal;
     }
 
-    /* Centrage colonnes 1, 4 et 5 */
     .schedule th:nth-child(1),
     .schedule td:nth-child(1),
     .schedule th:nth-child(4),
@@ -248,7 +248,6 @@
       text-align: center;
     }
 
-    /* Retour à la ligne propre dans les titres 1 et 5 */
     .schedule th:nth-child(1),
     .schedule th:nth-child(5) {
       white-space: normal;
@@ -341,7 +340,7 @@
         --orange-height: clamp(95px, 15vh, 150px);
         --green-height: clamp(42px, 6vh, 60px);
         --gap-after-green: clamp(6px, 1.5vh, 18px);
-        --logo-size: clamp(70px, 12vw, 95px);
+        --logo-size: clamp(80px, 13vw, 110px);
         --title-size: clamp(22px, 5vw, 38px);
         --date-size: clamp(16px, 3.6vw, 24px);
         --table-header-size: clamp(15px, 4vw, 24px);
@@ -350,8 +349,8 @@
       }
 
       .top-band {
-        grid-template-columns: 90px 1fr 90px;
-        padding: 10px 16px;
+        grid-template-columns: 100px 1fr 100px;
+        padding: 0 16px;
       }
 
       .green-info-bar {
@@ -384,8 +383,8 @@
         --orange-height: auto;
         --green-height: auto;
         --gap-after-green: 8px;
-        --logo-size: 58px;
-        --title-size: 22px;
+        --logo-size: 64px;
+        --title-size: 21px;
         --date-size: 18px;
         --table-header-size: 16px;
         --table-text-size: 18px;
@@ -414,9 +413,9 @@
       .top-band {
         height: auto;
         min-height: 95px;
-        grid-template-columns: 70px 1fr 70px;
+        grid-template-columns: 74px 1fr 74px;
         align-items: center;
-        padding: 12px 14px;
+        padding: 0 12px;
       }
 
       .logo {
@@ -596,11 +595,11 @@
 
     @media (min-width: 1600px) {
       :root {
-        --orange-height: clamp(130px, 15vh, 185px);
+        --orange-height: clamp(140px, 16vh, 200px);
         --green-height: clamp(70px, 7vh, 95px);
         --gap-after-green: clamp(15px, 2vh, 35px);
-        --logo-size: clamp(125px, 7.5vw, 160px);
-        --title-size: clamp(44px, 3.3vw, 64px);
+        --logo-size: clamp(150px, 8vw, 180px);
+        --title-size: clamp(42px, 3.1vw, 60px);
         --date-size: clamp(38px, 2.8vw, 56px);
         --table-header-size: clamp(32px, 2vw, 44px);
         --table-text-size: clamp(30px, 1.8vw, 40px);
@@ -622,15 +621,19 @@
 
     @media (max-height: 650px) {
       :root {
-        --orange-height: 90px;
+        --orange-height: 105px;
         --green-height: 42px;
         --gap-after-green: 8px;
-        --logo-size: 64px;
+        --logo-size: 90px;
         --title-size: 28px;
         --date-size: 18px;
         --table-header-size: 18px;
         --table-text-size: 18px;
         --row-height: 38px;
+      }
+
+      .top-band {
+        grid-template-columns: 110px 1fr 110px;
       }
 
       .close-checkbox {

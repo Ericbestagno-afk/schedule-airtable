@@ -16,12 +16,9 @@
       --white: #ffffff;
       --black: #111111;
 
-      /* Réglages dynamiques */
       --screen-padding: clamp(8px, 1.5vw, 24px);
       --orange-height: clamp(135px, 24vh, 260px);
       --green-height: clamp(48px, 7vh, 76px);
-
-      /* Espace réduit entre le bandeau vert et "Heure d’ouverture" */
       --gap-after-green: clamp(8px, 2vh, 25px);
 
       --logo-size: clamp(80px, 12vw, 170px);
@@ -393,15 +390,18 @@
       try {
         const response = await fetch("/api/schedule");
 
-if (!response.ok) {
-  throw new Error("Erreur API");
-}
+        if (!response.ok) {
+          throw new Error("Erreur API");
+        }
 
-const data = await response.json();
+        const data = await response.json();
 
-events = Array.isArray(data) ? data : data.events || [];
+        // Compatible avec :
+        // 1. un tableau direct : [...]
+        // 2. un objet API : { ok: true, events: [...] }
+        events = Array.isArray(data) ? data : data.events || [];
 
-renderSchedule();
+        renderSchedule();
 
       } catch (error) {
         document.getElementById("schedule-body").innerHTML = `

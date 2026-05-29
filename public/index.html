@@ -127,35 +127,47 @@
       min-height: var(--green-height);
       background: var(--green-rg);
       display: grid;
-      grid-template-columns: minmax(80px, 18vw) 1fr minmax(100px, 18vw);
+      grid-template-columns: minmax(120px, 18vw) 1fr minmax(120px, 18vw);
       align-items: center;
       padding: 0 clamp(16px, 3vw, 50px);
       border-top: 3px solid white;
     }
 
-    .fullscreen-btn {
+    .green-actions {
       grid-column: 1;
       justify-self: start;
       align-self: center;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
 
+    .fullscreen-btn,
+    .sound-btn {
       width: 46px;
       height: 46px;
       border: 2px solid white;
       border-radius: 8px;
       background: transparent;
       color: white;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 900;
       cursor: pointer;
       line-height: 1;
     }
 
-    .fullscreen-btn:hover {
+    .fullscreen-btn:hover,
+    .sound-btn:hover {
       background: rgba(255, 255, 255, 0.15);
     }
 
-    .fullscreen-btn:active {
+    .fullscreen-btn:active,
+    .sound-btn:active {
       transform: scale(0.96);
+    }
+
+    .sound-btn.sound-enabled {
+      background: rgba(255, 255, 255, 0.22);
     }
 
     .date-zone {
@@ -378,14 +390,15 @@
       }
 
       .green-info-bar {
-        grid-template-columns: 80px 1fr 100px;
+        grid-template-columns: 110px 1fr 110px;
         padding: 0 16px;
       }
 
-      .fullscreen-btn {
+      .fullscreen-btn,
+      .sound-btn {
         width: 40px;
         height: 40px;
-        font-size: 24px;
+        font-size: 22px;
       }
 
       .schedule th,
@@ -470,14 +483,18 @@
         border-top: 2px solid white;
       }
 
-      .fullscreen-btn {
+      .green-actions {
         grid-column: 1;
         grid-row: 3;
         justify-self: center;
+        margin-top: 4px;
+      }
+
+      .fullscreen-btn,
+      .sound-btn {
         width: 42px;
         height: 42px;
-        font-size: 24px;
-        margin-top: 4px;
+        font-size: 22px;
       }
 
       .date-zone {
@@ -701,9 +718,15 @@
       </header>
 
       <section class="green-info-bar">
-        <button id="fullscreen-btn" class="fullscreen-btn" title="Plein écran">
-          ⛶
-        </button>
+        <div class="green-actions">
+          <button id="fullscreen-btn" class="fullscreen-btn" title="Plein écran">
+            ⛶
+          </button>
+
+          <button id="sound-btn" class="sound-btn" title="Activer le son">
+            🔇
+          </button>
+        </div>
 
         <div class="date-zone" id="date-du-jour">
           DATE DU JOUR
@@ -741,6 +764,11 @@
     let events = [];
     let isEditingCloseTime = false;
 
+    let soundEnabled = false;
+    let alarmAudioContext = null;
+    let alarmInterval = null;
+    let alarmIsPlaying = false;
+
     function setupFullscreenButton() {
       const button = document.getElementById("fullscreen-btn");
       const target = document.documentElement;
@@ -767,6 +795,81 @@
       document.addEventListener("fullscreenchange", () => {
         button.textContent = document.fullscreenElement ? "×" : "⛶";
       });
+    }
+
+    function setupSoundButton() {
+      const button = document.getElementById("sound-btn");
+
+      if (!button) {
+        return;
+      }
+
+      button.addEventListener("click", async () => {
+        soundEnabled = !soundEnabled;
+
+        if (soundEnabled) {
+          alarmAudioContext =
+            alarmAudioContext ||
+            new (window.AudioContext || window.webkitAudioContext)();
+
+          if (alarmAudioContext.state === "suspended") {
+            await alarmAudioContext.resume();
+          }
+
+          button.textContent = "🔊";
+          button.classList.add("sound-enabled");
+
+          playAlarmBeep();
+        } else {
+          button.textContent = "🔇";
+          button.classList.remove("sound-enabled");
+          stopAlarm();
+        }
+      });
+    }
+
+    function playAlarmBeep() {
+      if (!soundEnabled || !alarmAudioContext) {
+        return;
+      }
+
+      const oscillator = alarmAudioContext.createOscillator();
+      const gain = alarmAudioContext.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, alarmAudioContext.currentTime);
+
+      gain.gain.setValueAtTime(0.0001, alarmAudioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.25, alarmAudioContext.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, alarmAudioContext.currentTime + 0.35);
+
+      oscillator.connect(gain);
+      gain.connect(alarmAudioContext.destination);
+
+      oscillator.start();
+      oscillator.stop(alarmAudioContext.currentTime + 0.4);
+    }
+
+    function startAlarm() {
+      if (!soundEnabled || alarmIsPlaying) {
+        return;
+      }
+
+      alarmIsPlaying = true;
+      playAlarmBeep();
+
+      alarmInterval = setInterval(() => {
+        playAlarmBeep();
+      }, 1200);
+    }
+
+    function stopAlarm() {
+      alarmIsPlaying = false;
+
+      if (alarmInterval) {
+        clearInterval(alarmInterval);
+        alarmInterval = null;
+      }
     }
 
     function updateDateAndClock() {
@@ -882,10 +985,12 @@
             </td>
           </tr>
         `;
+        stopAlarm();
         return;
       }
 
       const now = new Date();
+      let hasWarningLine = false;
 
       events.forEach(event => {
         const eventDate = new Date(event.datetime);
@@ -898,6 +1003,7 @@
 
         if (isLessThan2Minutes) {
           tr.classList.add("warning");
+          hasWarningLine = true;
         }
 
         if (isPast) {
@@ -1012,9 +1118,16 @@
           }
         });
       });
+
+      if (hasWarningLine) {
+        startAlarm();
+      } else {
+        stopAlarm();
+      }
     }
 
     setupFullscreenButton();
+    setupSoundButton();
     updateDateAndClock();
     loadSchedule();
 

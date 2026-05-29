@@ -18,7 +18,7 @@
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
 
-      --orange-height: clamp(120px, 17vh, 190px);
+      --orange-height: clamp(150px, 20vh, 230px);
       --logo-size: clamp(120px, 11vw, 190px);
       --title-size: clamp(28px, 3.1vw, 52px);
 
@@ -76,7 +76,7 @@
       grid-template-columns: minmax(180px, 20vw) 1fr minmax(180px, 20vw);
       align-items: center;
       justify-items: center;
-      padding: 0 clamp(24px, 4vw, 70px);
+      padding: clamp(12px, 2vh, 24px) clamp(24px, 4vw, 70px);
       overflow: hidden;
     }
 
@@ -229,7 +229,7 @@
     }
 
     /* =========================
-       TABLEAU AVEC SCROLL
+       TABLEAU
     ========================= */
 
     .table-zone {
@@ -441,7 +441,7 @@
 
     @media (max-width: 900px) {
       :root {
-        --orange-height: clamp(95px, 15vh, 150px);
+        --orange-height: clamp(120px, 17vh, 170px);
         --green-height: clamp(42px, 6vh, 60px);
         --gap-after-green: 0px;
         --logo-size: clamp(90px, 14vw, 120px);
@@ -454,7 +454,7 @@
 
       .top-band {
         grid-template-columns: 110px 1fr 110px;
-        padding: 0 16px;
+        padding: clamp(10px, 2vh, 18px) 16px;
       }
 
       .green-info-bar {
@@ -527,10 +527,10 @@
 
       .top-band {
         height: auto;
-        min-height: 95px;
+        min-height: 110px;
         grid-template-columns: 78px 1fr 78px;
         align-items: center;
-        padding: 0 12px;
+        padding: 12px;
       }
 
       .logo {
@@ -738,7 +738,7 @@
 
     @media (min-width: 1600px) {
       :root {
-        --orange-height: clamp(140px, 16vh, 200px);
+        --orange-height: clamp(170px, 20vh, 250px);
         --green-height: clamp(70px, 7vh, 95px);
         --gap-after-green: 0px;
         --logo-size: clamp(170px, 9vw, 210px);
@@ -764,7 +764,7 @@
 
     @media (max-height: 650px) {
       :root {
-        --orange-height: 105px;
+        --orange-height: 125px;
         --green-height: 42px;
         --gap-after-green: 0px;
         --logo-size: 105px;
@@ -777,6 +777,7 @@
 
       .top-band {
         grid-template-columns: 125px 1fr 125px;
+        padding: 10px 16px;
       }
 
       .close-checkbox {

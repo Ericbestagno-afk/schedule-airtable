@@ -1,1 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <title>Ouverture des Feed</title>
+
+  <style>
+    :root {
+      --orange-rg: #c95d2b;
+      --green-rg: #006b4d;
+      --blue-rg: #0f6680;
+      --grey-line: #c9ced3;
+      --grey-line-alt: #e6e9ec;
+      --white: #ffffff;
+      --black: #111111;
+
+      /* Réglages dynamiques */
+      --screen-padding: clamp(8px, 1.5vw, 24px);
+      --orange-height: clamp(135px, 24vh, 260px);
+      --green-height: clamp(48px, 7vh, 76px);
+
+      /* Espace réduit entre le bandeau vert et "Heure d’ouverture" */
+      --gap-after-green: clamp(8px, 2vh, 25px);
+
+      --logo-size: clamp(80px, 12vw, 170px);
+      --title-size: clamp(34px, 5vw, 82px);
+      --date-size: clamp(20px, 2.8vw, 44px);
+      --table-header-size: clamp(18px, 2.1vw, 36px);
+      --table-text-size: clamp(18px, 1.9vw, 34px);
+      --row-height: clamp(44px, 6vh, 64px);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: #f2f2f2;
+      font-family: Arial, Helvetica, sans-serif;
+      color: white;
+      overflow: hidden;
+    }
+
+    .screen {
+      width: 100vw;
+      height: 100vh;
+      padding: var(--screen-padding);
+      background: #f2f2f2;
+    }
+
+    .container {
+      width: 100%;
+      height: 100%;
+      background: white;
+      border: 1px solid #dddddd;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* =========================
+       BANDEAU ORANGE
+    ========================= */
+
+    .top-band {
+      height: var(--orange-height);
+      min-height: var(--orange-height);
+      background: var(--orange-rg);
+      display: grid;
+      grid-template-columns: minmax(80px, 18vw) 1fr minmax(80px, 18vw);
+      align-items: start;
+      padding: clamp(8px, 2vw, 22px) clamp(16px, 3vw, 50px);
+    }
+
+    .logo {
+      width: var(--logo-size);
+      height: var(--logo-size);
+      object-fit: contain;
+      display: block;
+    }
+
+    .logo.left {
+      justify-self: start;
+    }
+
+    .logo.right {
+      justify-self: end;
+    }
+
+    .main-title {
+      text-align: center;
+      font-size: var(--title-size);
+      font-weight: 900;
+      letter-spacing: clamp(1px, 0.2vw, 3px);
+      text-transform: uppercase;
+      line-height: 1;
+      color: white;
+      padding-top: clamp(0px, 1vh, 8px);
+      white-space: nowrap;
+    }
+
+    /* =========================
+       BANDEAU VERT
+    ========================= */
+
+    .green-info-bar {
+      height: var(--green-height);
+      min-height: var(--green-height);
+      background: var(--green-rg);
+      display: grid;
+      grid-template-columns: minmax(80px, 18vw) 1fr minmax(100px, 18vw);
+      align-items: center;
+      padding: 0 clamp(16px, 3vw, 50px);
+      border-top: 3px solid white;
+    }
+
+    .date-zone {
+      grid-column: 2;
+      text-align: center;
+      font-size: var(--date-size);
+      font-weight: 900;
+      text-transform: uppercase;
+      color: white;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .clock-zone {
+      grid-column: 3;
+      text-align: right;
+      font-size: var(--date-size);
+      font-weight: 900;
+      text-transform: uppercase;
+      color: white;
+      white-space: nowrap;
+    }
+
+    /* =========================
+       TABLEAU
+    ========================= */
+
+    .table-zone {
+      flex: 1;
+      background: white;
+      padding-top: var(--gap-after-green);
+      overflow: hidden;
+    }
+
+    .schedule {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .schedule thead tr {
+      background: var(--blue-rg);
+      height: var(--row-height);
+    }
+
+    .schedule th {
+      color: white;
+      text-align: left;
+      font-size: var(--table-header-size);
+      padding: clamp(6px, 1vw, 12px) clamp(10px, 1.4vw, 16px);
+      border: 2px solid white;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .schedule td {
+      height: var(--row-height);
+      font-size: var(--table-text-size);
+      color: var(--black);
+      padding: clamp(6px, 1vw, 12px) clamp(10px, 1.4vw, 16px);
+      border: 2px solid white;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .schedule tbody tr {
+      background: var(--grey-line);
+    }
+
+    .schedule tbody tr:nth-child(even) {
+      background: var(--grey-line-alt);
+    }
+
+    .col-time {
+      width: 29%;
+    }
+
+    .col-court {
+      width: 25%;
+    }
+
+    .col-feed {
+      width: 46%;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #333333;
+      font-size: clamp(22px, 2.2vw, 32px);
+      padding: 40px;
+    }
+
+    /* =========================
+       CLIGNOTEMENT ROUGE
+    ========================= */
+
+    .warning {
+      animation: blinkRed 0.8s infinite;
+    }
+
+    .warning td {
+      color: white;
+      font-weight: 900;
+    }
+
+    @keyframes blinkRed {
+      0% {
+        background: #9b0000;
+      }
+
+      50% {
+        background: #ff0000;
+      }
+
+      100% {
+        background: #9b0000;
+      }
+    }
+
+    .past {
+      opacity: 0.35;
+    }
+
+    /* =========================
+       ÉCRANS PETITS / TABLETTES
+    ========================= */
+
+    @media (max-width: 900px) {
+      :root {
+        --orange-height: clamp(110px, 20vh, 190px);
+        --green-height: clamp(42px, 6vh, 60px);
+        --gap-after-green: clamp(6px, 1.5vh, 18px);
+        --logo-size: clamp(60px, 14vw, 100px);
+        --title-size: clamp(24px, 7vw, 42px);
+        --date-size: clamp(16px, 3.6vw, 24px);
+        --table-header-size: clamp(15px, 4vw, 24px);
+        --table-text-size: clamp(15px, 3.8vw, 22px);
+        --row-height: clamp(38px, 5vh, 52px);
+      }
+
+      .top-band {
+        grid-template-columns: 80px 1fr 80px;
+        padding: 10px 16px;
+      }
+
+      .green-info-bar {
+        grid-template-columns: 80px 1fr 100px;
+        padding: 0 16px;
+      }
+
+      .schedule th,
+      .schedule td {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+    }
+
+    /* =========================
+       TRÈS GRANDS ÉCRANS TV
+    ========================= */
+
+    @media (min-width: 1600px) {
+      :root {
+        --orange-height: clamp(230px, 25vh, 320px);
+        --green-height: clamp(70px, 7vh, 95px);
+        --gap-after-green: clamp(15px, 2vh, 35px);
+        --logo-size: clamp(160px, 10vw, 220px);
+        --title-size: clamp(70px, 5vw, 100px);
+        --date-size: clamp(38px, 2.8vw, 56px);
+        --table-header-size: clamp(32px, 2vw, 44px);
+        --table-text-size: clamp(30px, 1.8vw, 40px);
+        --row-height: clamp(60px, 6vh, 80px);
+      }
+    }
+
+    /* =========================
+       ÉCRANS BAS EN HAUTEUR
+    ========================= */
+
+    @media (max-height: 650px) {
+      :root {
+        --orange-height: 120px;
+        --green-height: 42px;
+        --gap-after-green: 8px;
+        --logo-size: 80px;
+        --title-size: 34px;
+        --date-size: 18px;
+        --table-header-size: 18px;
+        --table-text-size: 18px;
+        --row-height: 38px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="screen">
+    <div class="container">
+
+      <!-- Bandeau orange -->
+      <header class="top-band">
+        <img src="./logo-rg.png" alt="Roland Garros" class="logo left" />
+
+        <div class="main-title">
+          OUVERTURE DES FEED
+        </div>
+
+        <img src="./logo-rg.png" alt="Roland Garros" class="logo right" />
+      </header>
+
+      <!-- Bandeau vert -->
+      <section class="green-info-bar">
+        <div></div>
+
+        <div class="date-zone" id="date-du-jour">
+          DATE DU JOUR
+        </div>
+
+        <div class="clock-zone" id="heure-actuelle">
+          HEURE
+        </div>
+      </section>
+
+      <!-- Tableau -->
+      <main class="table-zone">
+        <table class="schedule">
+          <thead>
+            <tr>
+              <th class="col-time">Heure d’ouverture</th>
+              <th class="col-court">Court</th>
+              <th class="col-feed">Feed</th>
+            </tr>
+          </thead>
+
+          <tbody id="schedule-body">
+            <tr>
+              <td colspan="3" class="empty-message">Chargement...</td>
+            </tr>
+          </tbody>
+        </table>
+      </main>
+
+    </div>
+  </div>
+
+  <script>
+    let events = [];
+
+    function updateDateAndClock() {
+      const now = new Date();
+
+      const dateFormatted = now.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      });
+
+      const timeFormatted = now.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+
+      document.getElementById("date-du-jour").textContent = dateFormatted;
+      document.getElementById("heure-actuelle").textContent = timeFormatted;
+    }
+
+    async function loadSchedule() {
+      try {
+        const response = await fetch("/api/schedule");
+
+        if (!response.ok) {
+          throw new Error("Erreur API");
+        }
+
+        events = await response.json();
+        renderSchedule();
+
+      } catch (error) {
+        document.getElementById("schedule-body").innerHTML = `
+          <tr>
+            <td colspan="3" class="empty-message">
+              Erreur de chargement du schedule
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function renderSchedule() {
+      const tbody = document.getElementById("schedule-body");
+      tbody.innerHTML = "";
+
+      if (!events.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" class="empty-message">
+              Aucun feed prévu aujourd'hui
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const now = new Date();
+
+      events.forEach(event => {
+        const eventDate = new Date(event.datetime);
+        const diff = eventDate - now;
+
+        const isLessThan2Minutes = diff > 0 && diff <= 2 * 60 * 1000;
+        const isPast = diff <= 0;
+
+        const tr = document.createElement("tr");
+
+        if (isLessThan2Minutes) {
+          tr.classList.add("warning");
+        }
+
+        if (isPast) {
+          tr.classList.add("past");
+        }
+
+        tr.innerHTML = `
+          <td>${event.heure || ""}</td>
+          <td>${event.court || ""}</td>
+          <td>${event.feed || ""}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    updateDateAndClock();
+    loadSchedule();
+
+    setInterval(updateDateAndClock, 1000);
+    setInterval(renderSchedule, 1000);
+    setInterval(loadSchedule, 60000);
+  </script>
+</body>
+</html>

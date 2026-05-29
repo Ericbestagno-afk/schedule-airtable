@@ -172,6 +172,7 @@
       border: 2px solid white;
       font-weight: 900;
       white-space: nowrap;
+      vertical-align: middle;
     }
 
     .schedule td {
@@ -196,9 +197,14 @@
 
     .col-time,
     .col-court,
-    .col-close,
+    .col-close {
+      width: 1%;
+      white-space: nowrap;
+    }
+
     .col-close-time {
       width: 1%;
+      min-width: 260px;
       white-space: nowrap;
     }
 
@@ -219,9 +225,21 @@
       white-space: normal;
     }
 
-    .col-close,
-    .schedule td:nth-child(4) {
+    /* Centrage colonnes 1, 4 et 5 */
+    .schedule th:nth-child(1),
+    .schedule td:nth-child(1),
+    .schedule th:nth-child(4),
+    .schedule td:nth-child(4),
+    .schedule th:nth-child(5),
+    .schedule td:nth-child(5) {
       text-align: center;
+    }
+
+    /* Retour à la ligne propre dans les titres 1 et 5 */
+    .schedule th:nth-child(1),
+    .schedule th:nth-child(5) {
+      white-space: normal;
+      line-height: 1.05;
     }
 
     .close-checkbox {
@@ -242,6 +260,8 @@
       color: #111111;
       text-align: center;
       font-family: Arial, Helvetica, sans-serif;
+      margin: 0 auto;
+      display: block;
     }
 
     .close-time-input:focus {
@@ -330,6 +350,10 @@
       .schedule td {
         padding-left: 8px;
         padding-right: 8px;
+      }
+
+      .col-close-time {
+        min-width: 220px;
       }
 
       .close-time-input {
@@ -482,6 +506,7 @@
       .schedule td:nth-child(5) {
         width: 100%;
         white-space: normal;
+        text-align: left;
       }
 
       .schedule td:nth-child(1)::before {
@@ -517,12 +542,14 @@
       .close-checkbox {
         width: 30px;
         height: 30px;
+        justify-self: start;
       }
 
       .close-time-input {
         width: 130px;
         font-size: 22px;
         justify-self: start;
+        margin: 0;
       }
 
       .warning {
@@ -565,6 +592,10 @@
         --table-header-size: clamp(32px, 2vw, 44px);
         --table-text-size: clamp(30px, 1.8vw, 40px);
         --row-height: clamp(60px, 6vh, 80px);
+      }
+
+      .col-close-time {
+        min-width: 320px;
       }
 
       .close-time-input {
@@ -632,11 +663,11 @@
         <table class="schedule">
           <thead>
             <tr>
-              <th class="col-time">Heure d’ouverture</th>
+              <th class="col-time">Heure<br>d’ouverture</th>
               <th class="col-court">Court</th>
               <th class="col-feed">Feed</th>
               <th class="col-close">Close</th>
-              <th class="col-close-time">Heure de fermeture</th>
+              <th class="col-close-time">Heure<br>de fermeture</th>
             </tr>
           </thead>
 

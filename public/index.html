@@ -76,10 +76,7 @@
       grid-template-columns: minmax(180px, 20vw) 1fr minmax(180px, 20vw);
       align-items: center;
       justify-items: center;
-
-      /* espace haut réduit, espace bas conservé */
-      padding: clamp(4px, 0.8vh, 10px) clamp(24px, 4vw, 70px) clamp(12px, 2vh, 24px);
-
+      padding: 0 clamp(24px, 4vw, 70px) clamp(8px, 1.2vh, 16px);
       overflow: hidden;
     }
 
@@ -301,6 +298,20 @@
       outline-offset: -3px;
     }
 
+    .overdue-unclosed td {
+      color: #d00000 !important;
+      font-weight: 900;
+    }
+
+    .overdue-unclosed .close-time-input {
+      color: #d00000 !important;
+      font-weight: 900;
+    }
+
+    .overdue-unclosed .close-time-input:disabled {
+      color: #d00000 !important;
+    }
+
     .col-time,
     .col-court,
     .col-close {
@@ -457,7 +468,7 @@
 
       .top-band {
         grid-template-columns: 110px 1fr 110px;
-        padding: 4px 16px 12px;
+        padding: 0 16px 8px;
       }
 
       .green-info-bar {
@@ -533,7 +544,7 @@
         min-height: 110px;
         grid-template-columns: 78px 1fr 78px;
         align-items: center;
-        padding: 4px 12px 12px;
+        padding: 0 12px 8px;
       }
 
       .logo {
@@ -780,7 +791,7 @@
 
       .top-band {
         grid-template-columns: 125px 1fr 125px;
-        padding: 4px 16px 10px;
+        padding: 0 16px 6px;
       }
 
       .close-checkbox {
@@ -868,6 +879,15 @@
     let alarmAudioContext = null;
     let alarmInterval = null;
     let alarmIsPlaying = false;
+
+    function getTodayParis() {
+      return new Intl.DateTimeFormat("fr-CA", {
+        timeZone: "Europe/Paris",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(new Date());
+    }
 
     function setupHiddenEditButton() {
       const hiddenButton = document.getElementById("hidden-edit-btn");
@@ -1171,6 +1191,7 @@
       }
 
       const now = new Date();
+      const todayParis = getTodayParis();
       const activeRecordId = getActiveRecordId(now);
 
       let hasWarningLine = false;
@@ -1183,6 +1204,11 @@
         const isLessThan2Minutes = diff > 0 && diff <= 2 * 60 * 1000;
         const isPast = diff <= 0;
 
+        const isOldUnclosed =
+          event.date &&
+          event.date < todayParis &&
+          !event.close;
+
         const tr = document.createElement("tr");
         tr.dataset.id = event.id;
 
@@ -1193,6 +1219,11 @@
 
         if (isPast) {
           tr.classList.add("past");
+        }
+
+        if (isOldUnclosed) {
+          tr.classList.add("overdue-unclosed");
+          tr.classList.remove("past");
         }
 
         if (event.id === activeRecordId) {
@@ -1262,6 +1293,11 @@
 
             event.close = isChecked;
             event.heureFermeture = fermetureValue;
+
+            if (isChecked && event.date && event.date < getTodayParis()) {
+              events = events.filter(item => item.id !== event.id);
+              renderSchedule();
+            }
 
           } catch (error) {
             checkbox.checked = previousClose;

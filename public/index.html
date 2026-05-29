@@ -18,7 +18,6 @@
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
 
-      /* Bandeau orange */
       --orange-height: clamp(120px, 17vh, 190px);
       --logo-size: clamp(100px, 10vw, 165px);
       --title-size: clamp(28px, 3.1vw, 52px);
@@ -132,6 +131,31 @@
       align-items: center;
       padding: 0 clamp(16px, 3vw, 50px);
       border-top: 3px solid white;
+    }
+
+    .fullscreen-btn {
+      grid-column: 1;
+      justify-self: start;
+      align-self: center;
+
+      width: 46px;
+      height: 46px;
+      border: 2px solid white;
+      border-radius: 8px;
+      background: transparent;
+      color: white;
+      font-size: 28px;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .fullscreen-btn:active {
+      transform: scale(0.96);
     }
 
     .date-zone {
@@ -358,6 +382,12 @@
         padding: 0 16px;
       }
 
+      .fullscreen-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+      }
+
       .schedule th,
       .schedule td {
         padding-left: 8px;
@@ -434,14 +464,20 @@
         height: auto;
         min-height: 58px;
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto;
+        grid-template-rows: auto auto auto;
         gap: 4px;
         padding: 8px 12px;
         border-top: 2px solid white;
       }
 
-      .green-info-bar > div:first-child {
-        display: none;
+      .fullscreen-btn {
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: center;
+        width: 42px;
+        height: 42px;
+        font-size: 24px;
+        margin-top: 4px;
       }
 
       .date-zone {
@@ -665,7 +701,9 @@
       </header>
 
       <section class="green-info-bar">
-        <div></div>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="Plein écran">
+          ⛶
+        </button>
 
         <div class="date-zone" id="date-du-jour">
           DATE DU JOUR
@@ -702,6 +740,34 @@
   <script>
     let events = [];
     let isEditingCloseTime = false;
+
+    function setupFullscreenButton() {
+      const button = document.getElementById("fullscreen-btn");
+      const target = document.documentElement;
+
+      if (!button) {
+        return;
+      }
+
+      button.addEventListener("click", async () => {
+        try {
+          if (!document.fullscreenElement) {
+            await target.requestFullscreen();
+            button.textContent = "×";
+          } else {
+            await document.exitFullscreen();
+            button.textContent = "⛶";
+          }
+        } catch (error) {
+          alert("Le plein écran n'est pas autorisé par ce navigateur.");
+          console.error(error);
+        }
+      });
+
+      document.addEventListener("fullscreenchange", () => {
+        button.textContent = document.fullscreenElement ? "×" : "⛶";
+      });
+    }
 
     function updateDateAndClock() {
       const now = new Date();
@@ -948,6 +1014,7 @@
       });
     }
 
+    setupFullscreenButton();
     updateDateAndClock();
     loadSchedule();
 

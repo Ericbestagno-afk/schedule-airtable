@@ -193,14 +193,16 @@
     }
 
     /* =========================
-       TABLEAU
+       TABLEAU AVEC SCROLL
     ========================= */
 
     .table-zone {
       flex: 1;
       background: white;
       padding-top: var(--gap-after-green);
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
     }
 
     .schedule {
@@ -243,6 +245,11 @@
 
     .schedule tbody tr:nth-child(even) {
       background: var(--grey-line-alt);
+    }
+
+    .active-row td {
+      outline: 3px solid var(--green-rg);
+      outline-offset: -3px;
     }
 
     .col-time,
@@ -514,7 +521,8 @@
 
       .table-zone {
         padding-top: 8px;
-        overflow: visible;
+        overflow-y: visible;
+        overflow-x: hidden;
       }
 
       .schedule {
@@ -737,7 +745,7 @@
         </div>
       </section>
 
-      <main class="table-zone">
+      <main class="table-zone" id="table-zone">
         <table class="schedule">
           <thead>
             <tr>
@@ -763,6 +771,7 @@
   <script>
     let events = [];
     let isEditingCloseTime = false;
+    let lastAutoScrolledRecordId = null;
 
     let soundEnabled = false;
     let alarmAudioContext = null;
@@ -969,6 +978,66 @@
       }
     }
 
+    function getActiveRecordId(now) {
+      if (!events.length) {
+        return null;
+      }
+
+      let nextEvent = null;
+      let nextDiff = Infinity;
+
+      let lastPastEvent = null;
+      let lastPastDiff = -Infinity;
+
+      events.forEach(event => {
+        if (!event.datetime) {
+          return;
+        }
+
+        const eventDate = new Date(event.datetime);
+        const diff = eventDate - now;
+
+        if (diff > 0 && diff < nextDiff) {
+          nextDiff = diff;
+          nextEvent = event;
+        }
+
+        if (diff <= 0 && diff > lastPastDiff) {
+          lastPastDiff = diff;
+          lastPastEvent = event;
+        }
+      });
+
+      if (nextEvent) {
+        return nextEvent.id;
+      }
+
+      if (lastPastEvent) {
+        return lastPastEvent.id;
+      }
+
+      return null;
+    }
+
+    function scrollToActiveRow(activeRowElement) {
+      if (!activeRowElement || isEditingCloseTime) {
+        return;
+      }
+
+      const recordId = activeRowElement.dataset.id;
+
+      if (recordId === lastAutoScrolledRecordId) {
+        return;
+      }
+
+      lastAutoScrolledRecordId = recordId;
+
+      activeRowElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+
     function renderSchedule() {
       if (isEditingCloseTime) {
         return;
@@ -990,7 +1059,10 @@
       }
 
       const now = new Date();
+      const activeRecordId = getActiveRecordId(now);
+
       let hasWarningLine = false;
+      let activeRowElement = null;
 
       events.forEach(event => {
         const eventDate = new Date(event.datetime);
@@ -1000,6 +1072,7 @@
         const isPast = diff <= 0;
 
         const tr = document.createElement("tr");
+        tr.dataset.id = event.id;
 
         if (isLessThan2Minutes) {
           tr.classList.add("warning");
@@ -1008,6 +1081,11 @@
 
         if (isPast) {
           tr.classList.add("past");
+        }
+
+        if (event.id === activeRecordId) {
+          tr.classList.add("active-row");
+          activeRowElement = tr;
         }
 
         tr.innerHTML = `
@@ -1124,6 +1202,8 @@
       } else {
         stopAlarm();
       }
+
+      scrollToActiveRow(activeRowElement);
     }
 
     setupFullscreenButton();

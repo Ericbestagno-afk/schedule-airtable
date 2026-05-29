@@ -1260,6 +1260,7 @@
           if (!isChecked) {
             fermetureValue = "";
             closeTimeInput.value = "";
+            event.heureFermeture = "";
           }
 
           try {
@@ -1270,13 +1271,15 @@
             event.close = isChecked;
             event.heureFermeture = fermetureValue;
 
-            if (isOldEvent(event) && (isChecked || fermetureValue)) {
+            if (isOldEvent(event) && isChecked) {
               scheduleRemoveOldEvent(event);
             }
 
           } catch (error) {
             checkbox.checked = previousClose;
             closeTimeInput.value = previousHeureFermeture;
+            event.close = previousClose;
+            event.heureFermeture = previousHeureFermeture;
 
           } finally {
             tr.classList.remove("saving");

@@ -458,29 +458,19 @@
       opacity: 1;
     }
 
-    .report-modal.hidden,
-    .sound-permission-modal.hidden {
+    .report-modal.hidden {
       display: none;
     }
 
-    .report-modal,
-    .sound-permission-modal {
+    .report-modal {
       position: fixed;
       inset: 0;
+      z-index: 9999;
       background: rgba(0, 0, 0, 0.65);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
-    }
-
-    .report-modal {
-      z-index: 9999;
-    }
-
-    .sound-permission-modal {
-      z-index: 10000;
-      background: rgba(0, 0, 0, 0.72);
     }
 
     .report-modal-content {
@@ -590,9 +580,7 @@
     }
 
     .report-save-btn,
-    .report-send-btn,
-    .enable-sound-btn,
-    .disable-sound-btn {
+    .report-send-btn {
       border: none;
       border-radius: 8px;
       padding: 12px 18px;
@@ -602,8 +590,7 @@
       text-transform: uppercase;
     }
 
-    .report-save-btn,
-    .enable-sound-btn {
+    .report-save-btn {
       background: var(--green-rg);
       color: white;
     }
@@ -613,45 +600,9 @@
       color: white;
     }
 
-    .disable-sound-btn {
-      background: #d9d9d9;
-      color: #111111;
-    }
-
     .report-send-btn:disabled {
       opacity: 0.4;
       cursor: not-allowed;
-    }
-
-    .sound-permission-content {
-      width: min(520px, 92vw);
-      background: white;
-      color: #111111;
-      border-radius: 14px;
-      padding: 26px;
-      text-align: center;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    }
-
-    .sound-permission-content h2 {
-      margin: 0 0 12px;
-      color: var(--green-rg);
-      font-size: 28px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    .sound-permission-content p {
-      margin: 0 0 22px;
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.35;
-    }
-
-    .sound-permission-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
     }
 
     @media (max-width: 900px) {
@@ -975,28 +926,13 @@
         font-size: 15px;
       }
 
-      .report-modal-footer,
-      .sound-permission-actions {
+      .report-modal-footer {
         flex-direction: column;
       }
 
       .report-save-btn,
-      .report-send-btn,
-      .enable-sound-btn,
-      .disable-sound-btn {
+      .report-send-btn {
         width: 100%;
-      }
-
-      .sound-permission-content {
-        padding: 20px;
-      }
-
-      .sound-permission-content h2 {
-        font-size: 22px;
-      }
-
-      .sound-permission-content p {
-        font-size: 16px;
       }
     }
 
@@ -1074,8 +1010,8 @@
             ⛶
           </button>
 
-          <button id="sound-btn" class="sound-btn" title="Activer / désactiver la voix">
-            🔇
+          <button id="sound-btn" class="sound-btn sound-enabled" title="Activer / désactiver la voix">
+            🔊
           </button>
 
           <span id="edit-indicator" class="edit-indicator">✎</span>
@@ -1116,25 +1052,6 @@
         </table>
       </main>
 
-    </div>
-  </div>
-
-  <div id="sound-permission-modal" class="sound-permission-modal">
-    <div class="sound-permission-content">
-      <h2>Annonces sonores</h2>
-      <p>
-        Voulez-vous activer les annonces vocales pour les ouvertures de feed ?
-      </p>
-
-      <div class="sound-permission-actions">
-        <button id="enable-sound-btn" class="enable-sound-btn">
-          Activer les annonces
-        </button>
-
-        <button id="disable-sound-btn" class="disable-sound-btn">
-          Continuer sans son
-        </button>
-      </div>
     </div>
   </div>
 
@@ -1196,8 +1113,8 @@
     let lastAutoScrolledRecordId = null;
     let editMode = false;
 
-    let soundEnabled = false;
-    let speechUnlocked = false;
+    let soundEnabled = true;
+    let speechUnlocked = true;
     let speechRepeatTimeout = null;
     let acknowledgedWarningIds = new Set();
     let lastWarningSignature = "";
@@ -1333,7 +1250,7 @@
       speakOneText(`OUVERTURE ${courtText}`, () => {
         speechRepeatTimeout = setTimeout(() => {
           speakCourtsSequentially(courts, index + 1);
-        }, 3000);
+        }, 10000);
       });
     }
 
@@ -1381,42 +1298,6 @@
         if (!activeIds.has(id)) {
           acknowledgedWarningIds.delete(id);
         }
-      });
-    }
-
-    function setupSoundPermissionModal() {
-      const modal = document.getElementById("sound-permission-modal");
-      const enableButton = document.getElementById("enable-sound-btn");
-      const disableButton = document.getElementById("disable-sound-btn");
-      const soundButton = document.getElementById("sound-btn");
-
-      if (!modal || !enableButton || !disableButton) {
-        return;
-      }
-
-      enableButton.addEventListener("click", () => {
-        soundEnabled = true;
-        unlockSpeech();
-
-        if (soundButton) {
-          soundButton.textContent = "🔊";
-          soundButton.classList.add("sound-enabled");
-        }
-
-        modal.classList.add("hidden");
-        renderSchedule();
-      });
-
-      disableButton.addEventListener("click", () => {
-        soundEnabled = false;
-        stopAlarm();
-
-        if (soundButton) {
-          soundButton.textContent = "🔇";
-          soundButton.classList.remove("sound-enabled");
-        }
-
-        modal.classList.add("hidden");
       });
     }
 
@@ -2115,7 +1996,6 @@
 
     setupFullscreenButton();
     setupSoundButton();
-    setupSoundPermissionModal();
     setupHiddenEditButton();
     setupReportModal();
     updateDateAndClock();

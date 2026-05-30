@@ -1121,11 +1121,13 @@
     let editMode = false;
 
     let soundEnabled = true;
-    let speechInterval = null;
     let speechIsPlaying = false;
     let warningCourtQueue = [];
     let acknowledgedWarningIds = new Set();
     let lastWarningSignature = "";
+    let speechQueue = [];
+    let speechQueueIndex = 0;
+    let speechRepeatTimeout = null;
 
     let reportData = null;
 
@@ -1189,8 +1191,8 @@
       reportButton.disabled = !areAllTodayRowsClosed();
     }
 
-    function speakText(text) {
-      if (!soundEnabled || !text) {
+    function speakNextInQueue() {
+      if (!soundEnabled || !speechQueue.length) {
         return;
       }
 
@@ -1199,29 +1201,41 @@
         return;
       }
 
+      if (speechQueueIndex >= speechQueue.length) {
+        speechQueueIndex = 0;
+
+        speechRepeatTimeout = setTimeout(() => {
+          speakNextInQueue();
+        }, 10000);
+
+        return;
+      }
+
+      const text = speechQueue[speechQueueIndex];
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "fr-FR";
       utterance.rate = 0.85;
       utterance.pitch = 1;
       utterance.volume = 1;
 
+      utterance.onend = () => {
+        speechQueueIndex += 1;
+
+        setTimeout(() => {
+          speakNextInQueue();
+        }, 500);
+      };
+
+      utterance.onerror = () => {
+        speechQueueIndex += 1;
+
+        setTimeout(() => {
+          speakNextInQueue();
+        }, 500);
+      };
+
       window.speechSynthesis.speak(utterance);
-    }
-
-    function speakWarningQueue() {
-      if (!soundEnabled || !warningCourtQueue.length) {
-        return;
-      }
-
-      if (!("speechSynthesis" in window)) {
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-
-      warningCourtQueue.forEach(courtText => {
-        speakText(`OUVERTURE ${courtText}`);
-      });
     }
 
     function startAlarm(courtTexts) {
@@ -1229,7 +1243,8 @@
         return;
       }
 
-      const signature = courtTexts.join("|");
+      const newQueue = courtTexts.map(courtText => `OUVERTURE ${courtText}`);
+      const signature = newQueue.join("|");
 
       if (speechIsPlaying && lastWarningSignature === signature) {
         return;
@@ -1239,23 +1254,23 @@
 
       speechIsPlaying = true;
       warningCourtQueue = courtTexts;
+      speechQueue = newQueue;
+      speechQueueIndex = 0;
       lastWarningSignature = signature;
 
-      speakWarningQueue();
-
-      speechInterval = setInterval(() => {
-        speakWarningQueue();
-      }, 10000);
+      speakNextInQueue();
     }
 
     function stopAlarm() {
       speechIsPlaying = false;
       warningCourtQueue = [];
+      speechQueue = [];
+      speechQueueIndex = 0;
       lastWarningSignature = "";
 
-      if (speechInterval) {
-        clearInterval(speechInterval);
-        speechInterval = null;
+      if (speechRepeatTimeout) {
+        clearTimeout(speechRepeatTimeout);
+        speechRepeatTimeout = null;
       }
 
       if ("speechSynthesis" in window) {

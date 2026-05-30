@@ -17,11 +17,14 @@
       --black: #111111;
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
+
       --orange-height: clamp(150px, 20vh, 230px);
       --logo-size: clamp(120px, 11vw, 190px);
       --title-size: clamp(28px, 3.1vw, 52px);
+
       --green-height: clamp(48px, 7vh, 76px);
       --date-size: clamp(20px, 2.8vw, 44px);
+
       --table-header-size: clamp(14px, 1.35vw, 24px);
       --table-text-size: clamp(14px, 1.25vw, 22px);
       --row-height: clamp(32px, 4.2vh, 46px);
@@ -427,7 +430,6 @@
 
     .warning {
       animation: blinkRed 0.8s infinite;
-      cursor: pointer;
     }
 
     .warning td {
@@ -700,7 +702,11 @@
         padding: 6px 8px;
       }
 
-      .logo,
+      .logo {
+        width: var(--logo-size);
+        height: var(--logo-size);
+      }
+
       .hidden-edit-btn {
         width: var(--logo-size);
         height: var(--logo-size);
@@ -850,6 +856,10 @@
         justify-self: start;
         margin: 0;
         padding: 4px 6px;
+      }
+
+      .warning {
+        animation: blinkRed 0.8s infinite;
       }
 
       .warning td,
@@ -1116,10 +1126,7 @@
     let soundEnabled = false;
     let speechInterval = null;
     let speechIsPlaying = false;
-    let warningCourtQueue = [];
-    let acknowledgedWarningIds = new Set();
-    let lastWarningSignature = "";
-    let speechTimeout = null;
+    let lastSpokenCourt = "";
 
     let reportData = null;
 
@@ -1183,8 +1190,8 @@
       reportButton.disabled = !areAllTodayRowsClosed();
     }
 
-    function speakOneCourt(courtText, onEnd) {
-      if (!soundEnabled || !courtText) {
+    function speakCourt(text) {
+      if (!soundEnabled || !text) {
         return;
       }
 
@@ -1195,103 +1202,48 @@
 
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(`OUVERTURE ${courtText}`);
+      const utterance = new SpeechSynthesisUtterance(`OUVERTURE ${text}`);
       utterance.lang = "fr-FR";
       utterance.rate = 0.85;
       utterance.pitch = 1;
       utterance.volume = 1;
 
-      utterance.onend = () => {
-        if (typeof onEnd === "function") {
-          onEnd();
-        }
-      };
-
-      utterance.onerror = () => {
-        if (typeof onEnd === "function") {
-          onEnd();
-        }
-      };
-
       window.speechSynthesis.speak(utterance);
     }
 
-    function speakCourtsSequentially(courts, index = 0) {
-      if (!soundEnabled || !Array.isArray(courts) || !courts.length) {
+    function startAlarm(courtText) {
+      if (!soundEnabled || !courtText) {
         return;
       }
 
-      if (index >= courts.length) {
-        speechTimeout = setTimeout(() => {
-          speakCourtsSequentially(courts, 0);
-        }, 10000);
-
-        return;
-      }
-
-      const courtText = courts[index];
-
-      speakOneCourt(courtText, () => {
-        speechTimeout = setTimeout(() => {
-          speakCourtsSequentially(courts, index + 1);
-        }, 10000);
-      });
-    }
-
-    function startAlarm(courtTexts) {
-      if (!soundEnabled || !Array.isArray(courtTexts) || !courtTexts.length) {
-        return;
-      }
-
-      const uniqueCourts = [...new Set(courtTexts.filter(Boolean))];
-
-      if (!uniqueCourts.length) {
-        return;
-      }
-
-      const signature = uniqueCourts.join("|");
-
-      if (speechIsPlaying && lastWarningSignature === signature) {
+      if (speechIsPlaying && lastSpokenCourt === courtText) {
         return;
       }
 
       stopAlarm();
 
       speechIsPlaying = true;
-      warningCourtQueue = uniqueCourts;
-      lastWarningSignature = signature;
+      lastSpokenCourt = courtText;
 
-      speakCourtsSequentially(uniqueCourts, 0);
+      speakCourt(courtText);
+
+      speechInterval = setInterval(() => {
+        speakCourt(lastSpokenCourt);
+      }, 10000);
     }
 
     function stopAlarm() {
       speechIsPlaying = false;
-      warningCourtQueue = [];
-      lastWarningSignature = "";
+      lastSpokenCourt = "";
 
       if (speechInterval) {
         clearInterval(speechInterval);
         speechInterval = null;
       }
 
-      if (speechTimeout) {
-        clearTimeout(speechTimeout);
-        speechTimeout = null;
-      }
-
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
-    }
-
-    function clearOldAcknowledgements() {
-      const activeIds = new Set(events.map(event => event.id));
-
-      acknowledgedWarningIds.forEach(id => {
-        if (!activeIds.has(id)) {
-          acknowledgedWarningIds.delete(id);
-        }
-      });
     }
 
     async function openReportModal() {
@@ -1551,31 +1503,12 @@
         return;
       }
 
-      button.textContent = soundEnabled ? "🔊" : "🔇";
-
-      if (soundEnabled) {
-        button.classList.add("sound-enabled");
-      } else {
-        button.classList.remove("sound-enabled");
-      }
-
       button.addEventListener("click", () => {
         soundEnabled = !soundEnabled;
 
         if (soundEnabled) {
           button.textContent = "🔊";
           button.classList.add("sound-enabled");
-
-          if ("speechSynthesis" in window) {
-            window.speechSynthesis.cancel();
-
-            const test = new SpeechSynthesisUtterance("Annonces activées");
-            test.lang = "fr-FR";
-            test.volume = 0.01;
-            window.speechSynthesis.speak(test);
-          }
-
-          renderSchedule();
         } else {
           button.textContent = "🔇";
           button.classList.remove("sound-enabled");
@@ -1668,7 +1601,6 @@
 
         events = Array.isArray(data) ? data : data.events || [];
 
-        clearOldAcknowledgements();
         renderSchedule();
 
       } catch (error) {
@@ -1768,7 +1700,7 @@
       const activeRecordId = getActiveRecordId(now);
 
       let hasWarningLine = false;
-      let warningCourtsToSpeak = [];
+      let warningCourtText = "";
       let activeRowElement = null;
 
       events.forEach(event => {
@@ -1794,8 +1726,8 @@
           tr.classList.add("warning");
           hasWarningLine = true;
 
-          if (!acknowledgedWarningIds.has(event.id) && event.court) {
-            warningCourtsToSpeak.push(event.court);
+          if (!warningCourtText) {
+            warningCourtText = event.court || "";
           }
         }
 
@@ -1841,26 +1773,6 @@
         `;
 
         tbody.appendChild(tr);
-
-        tr.addEventListener("click", eventClick => {
-          const clickedInput =
-            eventClick.target.classList.contains("close-checkbox") ||
-            eventClick.target.classList.contains("close-time-input");
-
-          if (clickedInput) {
-            return;
-          }
-
-          if (tr.classList.contains("warning")) {
-            acknowledgedWarningIds.add(event.id);
-
-            if ("speechSynthesis" in window) {
-              window.speechSynthesis.cancel();
-            }
-
-            renderSchedule();
-          }
-        });
 
         const checkbox = tr.querySelector(".close-checkbox");
         const closeTimeInput = tr.querySelector(".close-time-input");
@@ -1983,8 +1895,8 @@
         });
       });
 
-      if (hasWarningLine && warningCourtsToSpeak.length) {
-        startAlarm(warningCourtsToSpeak);
+      if (hasWarningLine && warningCourtText) {
+        startAlarm(warningCourtText);
       } else {
         stopAlarm();
       }

@@ -136,8 +136,7 @@ export default async function handler(req, res) {
           body: JSON.stringify({
             fields: {
               Remarque: remarque,
-              Envoyé: true,
-              "Date envoi": new Date().toISOString()
+              Envoyé: true
             }
           })
         });
@@ -149,8 +148,7 @@ export default async function handler(req, res) {
           fields: {
             Date: date,
             Remarque: remarque,
-            Envoyé: true,
-            "Date envoi": new Date().toISOString()
+            Envoyé: true
           }
         })
       });
@@ -269,8 +267,7 @@ export default async function handler(req, res) {
       report: savedReport
         ? {
             id: savedReport.id,
-            envoye: savedReport.fields?.Envoyé || false,
-            dateEnvoi: savedReport.fields?.["Date envoi"] || ""
+            envoye: savedReport.fields?.Envoyé || false
           }
         : null
     });

@@ -120,6 +120,7 @@
       text-transform: uppercase;
       line-height: 0.95;
       color: white;
+      white-space: normal;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1106,7 +1107,7 @@
 
       <div class="report-modal-footer">
         <button id="report-save-btn" class="report-save-btn">
-          Enregistrer remarque
+          Enregistrer
         </button>
 
         <button id="report-send-btn" class="report-send-btn">
@@ -1286,13 +1287,13 @@
         saveButton.textContent = "Remarque enregistrée";
 
         setTimeout(() => {
-          saveButton.textContent = "Enregistrer remarque";
+          saveButton.textContent = "Enregistrer";
           saveButton.disabled = false;
         }, 1500);
 
       } catch (error) {
         alert("Erreur lors de l'enregistrement de la remarque");
-        saveButton.textContent = "Enregistrer remarque";
+        saveButton.textContent = "Enregistrer";
         saveButton.disabled = false;
       }
     }

@@ -430,6 +430,7 @@
 
     .warning {
       animation: blinkRed 0.8s infinite;
+      cursor: pointer;
     }
 
     .warning td {
@@ -858,10 +859,6 @@
         padding: 4px 6px;
       }
 
-      .warning {
-        animation: blinkRed 0.8s infinite;
-      }
-
       .warning td,
       .warning td::before {
         color: white !important;
@@ -1020,8 +1017,8 @@
             ⛶
           </button>
 
-          <button id="sound-btn" class="sound-btn" title="Activer la voix">
-            🔇
+          <button id="sound-btn" class="sound-btn sound-enabled" title="Activer / désactiver la voix">
+            🔊
           </button>
 
           <span id="edit-indicator" class="edit-indicator">✎</span>
@@ -1123,10 +1120,12 @@
     let lastAutoScrolledRecordId = null;
     let editMode = false;
 
-    let soundEnabled = false;
+    let soundEnabled = true;
     let speechInterval = null;
     let speechIsPlaying = false;
-    let lastSpokenCourt = "";
+    let warningCourtQueue = [];
+    let acknowledgedWarningIds = new Set();
+    let lastWarningSignature = "";
 
     let reportData = null;
 
@@ -1190,7 +1189,7 @@
       reportButton.disabled = !areAllTodayRowsClosed();
     }
 
-    function speakCourt(text) {
+    function speakText(text) {
       if (!soundEnabled || !text) {
         return;
       }
@@ -1200,9 +1199,7 @@
         return;
       }
 
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(`OUVERTURE ${text}`);
+      const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "fr-FR";
       utterance.rate = 0.85;
       utterance.pitch = 1;
@@ -1211,30 +1208,50 @@
       window.speechSynthesis.speak(utterance);
     }
 
-    function startAlarm(courtText) {
-      if (!soundEnabled || !courtText) {
+    function speakWarningQueue() {
+      if (!soundEnabled || !warningCourtQueue.length) {
         return;
       }
 
-      if (speechIsPlaying && lastSpokenCourt === courtText) {
+      if (!("speechSynthesis" in window)) {
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      warningCourtQueue.forEach(courtText => {
+        speakText(`OUVERTURE ${courtText}`);
+      });
+    }
+
+    function startAlarm(courtTexts) {
+      if (!soundEnabled || !Array.isArray(courtTexts) || !courtTexts.length) {
+        return;
+      }
+
+      const signature = courtTexts.join("|");
+
+      if (speechIsPlaying && lastWarningSignature === signature) {
         return;
       }
 
       stopAlarm();
 
       speechIsPlaying = true;
-      lastSpokenCourt = courtText;
+      warningCourtQueue = courtTexts;
+      lastWarningSignature = signature;
 
-      speakCourt(courtText);
+      speakWarningQueue();
 
       speechInterval = setInterval(() => {
-        speakCourt(lastSpokenCourt);
+        speakWarningQueue();
       }, 10000);
     }
 
     function stopAlarm() {
       speechIsPlaying = false;
-      lastSpokenCourt = "";
+      warningCourtQueue = [];
+      lastWarningSignature = "";
 
       if (speechInterval) {
         clearInterval(speechInterval);
@@ -1244,6 +1261,16 @@
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
+    }
+
+    function clearOldAcknowledgements() {
+      const activeIds = new Set(events.map(event => event.id));
+
+      acknowledgedWarningIds.forEach(id => {
+        if (!activeIds.has(id)) {
+          acknowledgedWarningIds.delete(id);
+        }
+      });
     }
 
     async function openReportModal() {
@@ -1503,12 +1530,19 @@
         return;
       }
 
+      button.textContent = soundEnabled ? "🔊" : "🔇";
+
+      if (soundEnabled) {
+        button.classList.add("sound-enabled");
+      }
+
       button.addEventListener("click", () => {
         soundEnabled = !soundEnabled;
 
         if (soundEnabled) {
           button.textContent = "🔊";
           button.classList.add("sound-enabled");
+          renderSchedule();
         } else {
           button.textContent = "🔇";
           button.classList.remove("sound-enabled");
@@ -1601,6 +1635,7 @@
 
         events = Array.isArray(data) ? data : data.events || [];
 
+        clearOldAcknowledgements();
         renderSchedule();
 
       } catch (error) {
@@ -1700,7 +1735,7 @@
       const activeRecordId = getActiveRecordId(now);
 
       let hasWarningLine = false;
-      let warningCourtText = "";
+      let warningCourtsToSpeak = [];
       let activeRowElement = null;
 
       events.forEach(event => {
@@ -1726,8 +1761,8 @@
           tr.classList.add("warning");
           hasWarningLine = true;
 
-          if (!warningCourtText) {
-            warningCourtText = event.court || "";
+          if (!acknowledgedWarningIds.has(event.id) && event.court) {
+            warningCourtsToSpeak.push(event.court);
           }
         }
 
@@ -1773,6 +1808,26 @@
         `;
 
         tbody.appendChild(tr);
+
+        tr.addEventListener("click", eventClick => {
+          const clickedInput =
+            eventClick.target.classList.contains("close-checkbox") ||
+            eventClick.target.classList.contains("close-time-input");
+
+          if (clickedInput) {
+            return;
+          }
+
+          if (tr.classList.contains("warning")) {
+            acknowledgedWarningIds.add(event.id);
+
+            if ("speechSynthesis" in window) {
+              window.speechSynthesis.cancel();
+            }
+
+            renderSchedule();
+          }
+        });
 
         const checkbox = tr.querySelector(".close-checkbox");
         const closeTimeInput = tr.querySelector(".close-time-input");
@@ -1895,8 +1950,8 @@
         });
       });
 
-      if (hasWarningLine && warningCourtText) {
-        startAlarm(warningCourtText);
+      if (hasWarningLine && warningCourtsToSpeak.length) {
+        startAlarm(warningCourtsToSpeak);
       } else {
         stopAlarm();
       }

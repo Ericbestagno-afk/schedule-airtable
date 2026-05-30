@@ -141,7 +141,7 @@
       min-height: var(--green-height);
       background: var(--green-rg);
       display: grid;
-      grid-template-columns: minmax(150px, 18vw) 1fr minmax(120px, 18vw);
+      grid-template-columns: minmax(150px, 18vw) 1fr minmax(220px, 24vw);
       align-items: center;
       padding: 0 clamp(16px, 3vw, 50px);
       border-top: 3px solid white;
@@ -208,14 +208,42 @@
       text-overflow: ellipsis;
     }
 
-    .clock-zone {
+    .clock-report-zone {
       grid-column: 3;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .clock-zone {
       text-align: right;
       font-size: var(--date-size);
       font-weight: 900;
       text-transform: uppercase;
       color: white;
       white-space: nowrap;
+    }
+
+    .report-btn {
+      border: 2px solid white;
+      border-radius: 8px;
+      background: transparent;
+      color: white;
+      font-size: clamp(14px, 1.1vw, 20px);
+      font-weight: 900;
+      padding: 8px 14px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .report-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .report-btn:not(:disabled):hover {
+      background: rgba(255, 255, 255, 0.18);
     }
 
     .table-zone {
@@ -442,6 +470,157 @@
       opacity: 1;
     }
 
+    /* =========================
+       MODALE REPORT
+    ========================= */
+
+    .report-modal.hidden {
+      display: none;
+    }
+
+    .report-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .report-modal-content {
+      width: min(1100px, 96vw);
+      max-height: 92vh;
+      background: white;
+      color: #111111;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .report-modal-header {
+      background: var(--orange-rg);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .report-modal-header h2 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .report-close-btn {
+      width: 42px;
+      height: 42px;
+      border: 2px solid white;
+      border-radius: 8px;
+      background: transparent;
+      color: white;
+      font-size: 28px;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .report-modal-body {
+      padding: 18px 20px;
+      overflow-y: auto;
+    }
+
+    .report-date {
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 12px;
+      color: var(--green-rg);
+    }
+
+    .report-table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .report-table th {
+      background: var(--blue-rg);
+      color: white;
+      font-weight: 900;
+      padding: 10px;
+      border: 2px solid white;
+      text-align: left;
+    }
+
+    .report-table td {
+      background: #e6e9ec;
+      color: #111111;
+      font-weight: 700;
+      padding: 10px;
+      border: 2px solid white;
+    }
+
+    .report-remark-label {
+      display: block;
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: #111111;
+    }
+
+    .report-remark {
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      font-size: 17px;
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 12px;
+      border: 2px solid var(--blue-rg);
+      border-radius: 8px;
+    }
+
+    .report-modal-footer {
+      padding: 14px 20px;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .report-save-btn,
+    .report-send-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .report-save-btn {
+      background: var(--green-rg);
+      color: white;
+    }
+
+    .report-send-btn {
+      background: var(--blue-rg);
+      color: white;
+    }
+
+    .report-send-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     @media (max-width: 900px) {
       :root {
         --orange-height: clamp(120px, 17vh, 170px);
@@ -461,7 +640,7 @@
       }
 
       .green-info-bar {
-        grid-template-columns: 145px 1fr 110px;
+        grid-template-columns: 145px 1fr 190px;
         padding: 0 16px;
       }
 
@@ -562,7 +741,7 @@
 
       .green-info-bar {
         height: auto;
-        min-height: 78px;
+        min-height: 92px;
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto;
         gap: 5px;
@@ -598,11 +777,21 @@
         text-align: center;
       }
 
-      .clock-zone {
+      .clock-report-zone {
         grid-column: 1;
         grid-row: 2;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .clock-zone {
         text-align: center;
         font-size: 20px;
+      }
+
+      .report-btn {
+        font-size: 13px;
+        padding: 6px 10px;
       }
 
       .table-zone {
@@ -740,6 +929,55 @@
         padding: 24px 12px;
         text-align: center;
       }
+
+      .report-modal {
+        align-items: flex-start;
+        padding: 10px;
+      }
+
+      .report-modal-content {
+        width: 100%;
+        max-height: 96vh;
+        border-radius: 10px;
+      }
+
+      .report-modal-header {
+        padding: 12px;
+      }
+
+      .report-modal-header h2 {
+        font-size: 19px;
+      }
+
+      .report-close-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 24px;
+      }
+
+      .report-modal-body {
+        padding: 12px;
+      }
+
+      .report-table th,
+      .report-table td {
+        font-size: 13px;
+        padding: 7px;
+      }
+
+      .report-remark {
+        min-height: 120px;
+        font-size: 15px;
+      }
+
+      .report-modal-footer {
+        flex-direction: column;
+      }
+
+      .report-save-btn,
+      .report-send-btn {
+        width: 100%;
+      }
     }
 
     @media (min-width: 1600px) {
@@ -829,8 +1067,14 @@
           DATE DU JOUR
         </div>
 
-        <div class="clock-zone" id="heure-actuelle">
-          HEURE
+        <div class="clock-report-zone">
+          <button id="report-btn" class="report-btn" disabled>
+            Report
+          </button>
+
+          <div class="clock-zone" id="heure-actuelle">
+            HEURE
+          </div>
         </div>
       </section>
 
@@ -857,6 +1101,58 @@
     </div>
   </div>
 
+  <div id="report-modal" class="report-modal hidden">
+    <div class="report-modal-content">
+      <div class="report-modal-header">
+        <h2>Report du jour</h2>
+        <button id="report-close-btn" class="report-close-btn">×</button>
+      </div>
+
+      <div class="report-modal-body">
+        <div id="report-date" class="report-date"></div>
+
+        <div class="report-table-wrapper">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Heure ouverture</th>
+                <th>Court</th>
+                <th>Feed</th>
+                <th>Close</th>
+                <th>Heure fermeture</th>
+              </tr>
+            </thead>
+            <tbody id="report-body">
+              <tr>
+                <td colspan="5">Chargement...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <label class="report-remark-label" for="report-remark">
+          Remarque
+        </label>
+
+        <textarea
+          id="report-remark"
+          class="report-remark"
+          placeholder="Ajouter une remarque..."
+        ></textarea>
+      </div>
+
+      <div class="report-modal-footer">
+        <button id="report-save-btn" class="report-save-btn">
+          Enregistrer remarque
+        </button>
+
+        <button id="report-send-btn" class="report-send-btn" disabled>
+          Envoyer
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let events = [];
     let isEditingCloseTime = false;
@@ -867,6 +1163,8 @@
     let alarmAudioContext = null;
     let alarmInterval = null;
     let alarmIsPlaying = false;
+
+    let reportData = null;
 
     const pendingRemovalIds = new Set();
 
@@ -905,6 +1203,169 @@
         pendingRemovalIds.delete(event.id);
         renderSchedule();
       }, 3000);
+    }
+
+    function areAllTodayRowsClosed() {
+      const todayParis = getTodayParis();
+      const todayEvents = events.filter(event => event.date === todayParis);
+
+      if (!todayEvents.length) {
+        return false;
+      }
+
+      return todayEvents.every(event => event.close === true);
+    }
+
+    function updateReportButtonState() {
+      const reportButton = document.getElementById("report-btn");
+
+      if (!reportButton) {
+        return;
+      }
+
+      reportButton.disabled = !areAllTodayRowsClosed();
+    }
+
+    async function openReportModal() {
+      const modal = document.getElementById("report-modal");
+      const reportDate = document.getElementById("report-date");
+      const reportBody = document.getElementById("report-body");
+      const reportRemark = document.getElementById("report-remark");
+
+      const todayParis = getTodayParis();
+
+      modal.classList.remove("hidden");
+      reportDate.textContent = `Date : ${todayParis}`;
+      reportBody.innerHTML = `
+        <tr>
+          <td colspan="5">Chargement...</td>
+        </tr>
+      `;
+      reportRemark.value = "";
+
+      try {
+        const response = await fetch(`/api/report?date=${encodeURIComponent(todayParis)}`);
+
+        if (!response.ok) {
+          throw new Error("Erreur chargement report");
+        }
+
+        const data = await response.json();
+        reportData = data;
+
+        const reportEvents = data.events || [];
+
+        if (!reportEvents.length) {
+          reportBody.innerHTML = `
+            <tr>
+              <td colspan="5">Aucune ligne pour aujourd'hui</td>
+            </tr>
+          `;
+        } else {
+          reportBody.innerHTML = reportEvents.map(event => `
+            <tr>
+              <td>${event.heure || ""}</td>
+              <td>${event.court || ""}</td>
+              <td>${event.feed || ""}</td>
+              <td>${event.close ? "Oui" : "Non"}</td>
+              <td>${event.heureFermeture || ""}</td>
+            </tr>
+          `).join("");
+        }
+
+        reportRemark.value = data.report?.remarque || "";
+
+      } catch (error) {
+        reportBody.innerHTML = `
+          <tr>
+            <td colspan="5">Erreur de chargement du report</td>
+          </tr>
+        `;
+      }
+    }
+
+    function closeReportModal() {
+      const modal = document.getElementById("report-modal");
+
+      if (modal) {
+        modal.classList.add("hidden");
+      }
+    }
+
+    async function saveReportRemark() {
+      const reportRemark = document.getElementById("report-remark");
+      const saveButton = document.getElementById("report-save-btn");
+
+      const todayParis = getTodayParis();
+
+      try {
+        saveButton.disabled = true;
+        saveButton.textContent = "Enregistrement...";
+
+        const response = await fetch("/api/report", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            date: todayParis,
+            remarque: reportRemark.value || ""
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur enregistrement remarque");
+        }
+
+        const data = await response.json();
+        reportData = data;
+
+        saveButton.textContent = "Remarque enregistrée";
+
+        setTimeout(() => {
+          saveButton.textContent = "Enregistrer remarque";
+          saveButton.disabled = false;
+        }, 1500);
+
+      } catch (error) {
+        alert("Erreur lors de l'enregistrement de la remarque");
+        saveButton.textContent = "Enregistrer remarque";
+        saveButton.disabled = false;
+      }
+    }
+
+    function setupReportModal() {
+      const reportButton = document.getElementById("report-btn");
+      const closeButton = document.getElementById("report-close-btn");
+      const saveButton = document.getElementById("report-save-btn");
+      const sendButton = document.getElementById("report-send-btn");
+      const modal = document.getElementById("report-modal");
+
+      if (reportButton) {
+        reportButton.addEventListener("click", openReportModal);
+      }
+
+      if (closeButton) {
+        closeButton.addEventListener("click", closeReportModal);
+      }
+
+      if (saveButton) {
+        saveButton.addEventListener("click", saveReportRemark);
+      }
+
+      if (sendButton) {
+        sendButton.addEventListener("click", () => {
+          alert("L'envoi PDF sera ajouté à l'étape suivante.");
+        });
+      }
+
+      if (modal) {
+        modal.addEventListener("click", event => {
+          if (event.target === modal) {
+            closeReportModal();
+          }
+        });
+      }
     }
 
     function setupHiddenEditButton() {
@@ -1205,6 +1666,7 @@
           </tr>
         `;
         stopAlarm();
+        updateReportButtonState();
         return;
       }
 
@@ -1315,6 +1777,8 @@
             event.close = isChecked;
             event.heureFermeture = fermetureValue;
 
+            updateReportButtonState();
+
             if (isOldEvent(event) && isChecked) {
               scheduleRemoveOldEvent(event);
             }
@@ -1324,6 +1788,7 @@
             closeTimeInput.value = previousHeureFermeture;
             event.close = previousClose;
             event.heureFermeture = previousHeureFermeture;
+            updateReportButtonState();
 
           } finally {
             tr.classList.remove("saving");
@@ -1363,6 +1828,8 @@
 
             event.heureFermeture = fermetureValue;
 
+            updateReportButtonState();
+
             if (isOldEvent(event) && fermetureValue) {
               scheduleRemoveOldEvent(event);
             } else {
@@ -1371,6 +1838,7 @@
 
           } catch (error) {
             closeTimeInput.value = previousHeureFermeture;
+            updateReportButtonState();
             renderSchedule();
 
           } finally {
@@ -1403,12 +1871,14 @@
         stopAlarm();
       }
 
+      updateReportButtonState();
       scrollToActiveRow(activeRowElement);
     }
 
     setupFullscreenButton();
     setupSoundButton();
     setupHiddenEditButton();
+    setupReportModal();
     updateDateAndClock();
     loadSchedule();
 

@@ -1146,7 +1146,7 @@
           Enregistrer remarque
         </button>
 
-        <button id="report-send-btn" class="report-send-btn" disabled>
+        <button id="report-send-btn" class="report-send-btn">
           Envoyer
         </button>
       </div>
@@ -1334,6 +1334,53 @@
       }
     }
 
+    async function sendReportByEmail() {
+      const sendButton = document.getElementById("report-send-btn");
+      const reportRemark = document.getElementById("report-remark");
+
+      const todayParis = getTodayParis();
+
+      try {
+        sendButton.disabled = true;
+        sendButton.textContent = "Envoi...";
+
+        const response = await fetch("/api/send-report", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            date: todayParis,
+            remarque: reportRemark.value || ""
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error(data);
+          throw new Error(data.error || "Erreur envoi report");
+        }
+
+        sendButton.textContent = "Envoyé";
+
+        alert(
+          `Report envoyé avec succès à ${data.recipients.length} destinataire(s).`
+        );
+
+        setTimeout(() => {
+          closeReportModal();
+          sendButton.textContent = "Envoyer";
+          sendButton.disabled = false;
+        }, 1500);
+
+      } catch (error) {
+        alert(`Erreur lors de l'envoi du report : ${error.message}`);
+        sendButton.textContent = "Envoyer";
+        sendButton.disabled = false;
+      }
+    }
+
     function setupReportModal() {
       const reportButton = document.getElementById("report-btn");
       const closeButton = document.getElementById("report-close-btn");
@@ -1354,9 +1401,7 @@
       }
 
       if (sendButton) {
-        sendButton.addEventListener("click", () => {
-          alert("L'envoi PDF sera ajouté à l'étape suivante.");
-        });
+        sendButton.addEventListener("click", sendReportByEmail);
       }
 
       if (modal) {

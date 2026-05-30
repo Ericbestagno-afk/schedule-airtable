@@ -1020,7 +1020,7 @@
             ⛶
           </button>
 
-          <button id="sound-btn" class="sound-btn" title="Activer le son">
+          <button id="sound-btn" class="sound-btn" title="Activer la voix">
             🔇
           </button>
 
@@ -1124,9 +1124,9 @@
     let editMode = false;
 
     let soundEnabled = false;
-    let alarmAudioContext = null;
-    let alarmInterval = null;
-    let alarmIsPlaying = false;
+    let speechInterval = null;
+    let speechIsPlaying = false;
+    let lastSpokenCourt = "";
 
     let reportData = null;
 
@@ -1188,6 +1188,62 @@
       }
 
       reportButton.disabled = !areAllTodayRowsClosed();
+    }
+
+    function speakCourt(text) {
+      if (!soundEnabled || !text) {
+        return;
+      }
+
+      if (!("speechSynthesis" in window)) {
+        console.warn("Synthèse vocale non disponible sur ce navigateur.");
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(`OUVERTURE ${text}`);
+      utterance.lang = "fr-FR";
+      utterance.rate = 0.85;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function startAlarm(courtText) {
+      if (!soundEnabled || !courtText) {
+        return;
+      }
+
+      if (speechIsPlaying && lastSpokenCourt === courtText) {
+        return;
+      }
+
+      stopAlarm();
+
+      speechIsPlaying = true;
+      lastSpokenCourt = courtText;
+
+      speakCourt(courtText);
+
+      speechInterval = setInterval(() => {
+        speakCourt(lastSpokenCourt);
+      }, 10000);
+    }
+
+    function stopAlarm() {
+      speechIsPlaying = false;
+      lastSpokenCourt = "";
+
+      if (speechInterval) {
+        clearInterval(speechInterval);
+        speechInterval = null;
+      }
+
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
     }
 
     async function openReportModal() {
@@ -1447,72 +1503,18 @@
         return;
       }
 
-      button.addEventListener("click", async () => {
+      button.addEventListener("click", () => {
         soundEnabled = !soundEnabled;
 
         if (soundEnabled) {
-          alarmAudioContext =
-            alarmAudioContext ||
-            new (window.AudioContext || window.webkitAudioContext)();
-
-          if (alarmAudioContext.state === "suspended") {
-            await alarmAudioContext.resume();
-          }
-
           button.textContent = "🔊";
           button.classList.add("sound-enabled");
-
-          playAlarmBeep();
         } else {
           button.textContent = "🔇";
           button.classList.remove("sound-enabled");
           stopAlarm();
         }
       });
-    }
-
-    function playAlarmBeep() {
-      if (!soundEnabled || !alarmAudioContext) {
-        return;
-      }
-
-      const oscillator = alarmAudioContext.createOscillator();
-      const gain = alarmAudioContext.createGain();
-
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(880, alarmAudioContext.currentTime);
-
-      gain.gain.setValueAtTime(0.0001, alarmAudioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.25, alarmAudioContext.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, alarmAudioContext.currentTime + 0.35);
-
-      oscillator.connect(gain);
-      gain.connect(alarmAudioContext.destination);
-
-      oscillator.start();
-      oscillator.stop(alarmAudioContext.currentTime + 0.4);
-    }
-
-    function startAlarm() {
-      if (!soundEnabled || alarmIsPlaying) {
-        return;
-      }
-
-      alarmIsPlaying = true;
-      playAlarmBeep();
-
-      alarmInterval = setInterval(() => {
-        playAlarmBeep();
-      }, 1200);
-    }
-
-    function stopAlarm() {
-      alarmIsPlaying = false;
-
-      if (alarmInterval) {
-        clearInterval(alarmInterval);
-        alarmInterval = null;
-      }
     }
 
     function updateDateAndClock() {
@@ -1698,6 +1700,7 @@
       const activeRecordId = getActiveRecordId(now);
 
       let hasWarningLine = false;
+      let warningCourtText = "";
       let activeRowElement = null;
 
       events.forEach(event => {
@@ -1722,6 +1725,10 @@
         if (isLessThan2Minutes) {
           tr.classList.add("warning");
           hasWarningLine = true;
+
+          if (!warningCourtText) {
+            warningCourtText = event.court || "";
+          }
         }
 
         if (isPast) {
@@ -1888,8 +1895,8 @@
         });
       });
 
-      if (hasWarningLine) {
-        startAlarm();
+      if (hasWarningLine && warningCourtText) {
+        startAlarm(warningCourtText);
       } else {
         stopAlarm();
       }

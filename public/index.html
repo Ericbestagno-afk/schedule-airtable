@@ -461,7 +461,8 @@
       opacity: 1;
     }
 
-    .report-modal.hidden {
+    .report-modal.hidden,
+    .sound-permission-modal.hidden {
       display: none;
     }
 
@@ -606,6 +607,69 @@
     .report-send-btn:disabled {
       opacity: 0.4;
       cursor: not-allowed;
+    }
+
+    .sound-permission-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .sound-permission-content {
+      width: min(520px, 92vw);
+      background: white;
+      color: #111111;
+      border-radius: 14px;
+      padding: 26px;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .sound-permission-content h2 {
+      margin: 0 0 12px;
+      color: var(--green-rg);
+      font-size: 28px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .sound-permission-content p {
+      margin: 0 0 22px;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .sound-permission-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .enable-sound-btn,
+    .disable-sound-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 13px 18px;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .enable-sound-btn {
+      background: var(--green-rg);
+      color: white;
+    }
+
+    .disable-sound-btn {
+      background: #d9d9d9;
+      color: #111111;
     }
 
     @media (max-width: 900px) {
@@ -941,6 +1005,27 @@
       .report-send-btn {
         width: 100%;
       }
+
+      .sound-permission-content {
+        padding: 20px;
+      }
+
+      .sound-permission-content h2 {
+        font-size: 22px;
+      }
+
+      .sound-permission-content p {
+        font-size: 16px;
+      }
+
+      .sound-permission-actions {
+        flex-direction: column;
+      }
+
+      .enable-sound-btn,
+      .disable-sound-btn {
+        width: 100%;
+      }
     }
 
     @media (min-width: 1600px) {
@@ -1017,8 +1102,8 @@
             ⛶
           </button>
 
-          <button id="sound-btn" class="sound-btn sound-enabled" title="Activer / désactiver la voix">
-            🔊
+          <button id="sound-btn" class="sound-btn" title="Activer / désactiver la voix">
+            🔇
           </button>
 
           <span id="edit-indicator" class="edit-indicator">✎</span>
@@ -1059,6 +1144,25 @@
         </table>
       </main>
 
+    </div>
+  </div>
+
+  <div id="sound-permission-modal" class="sound-permission-modal">
+    <div class="sound-permission-content">
+      <h2>Annonces sonores</h2>
+      <p>
+        Voulez-vous activer les annonces vocales pour les ouvertures de feed ?
+      </p>
+
+      <div class="sound-permission-actions">
+        <button id="enable-sound-btn" class="enable-sound-btn">
+          Activer les annonces
+        </button>
+
+        <button id="disable-sound-btn" class="disable-sound-btn">
+          Continuer sans son
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1120,14 +1224,11 @@
     let lastAutoScrolledRecordId = null;
     let editMode = false;
 
-    let soundEnabled = true;
-    let speechIsPlaying = false;
-    let warningCourtQueue = [];
+    let soundEnabled = false;
+    let speechUnlocked = false;
+    let speechRepeatTimeout = null;
     let acknowledgedWarningIds = new Set();
     let lastWarningSignature = "";
-    let speechQueue = [];
-    let speechQueueIndex = 0;
-    let speechRepeatTimeout = null;
 
     let reportData = null;
 
@@ -1191,8 +1292,28 @@
       reportButton.disabled = !areAllTodayRowsClosed();
     }
 
-    function speakNextInQueue() {
-      if (!soundEnabled || !speechQueue.length) {
+    function unlockSpeech() {
+      if (speechUnlocked) {
+        return;
+      }
+
+      if (!("speechSynthesis" in window)) {
+        return;
+      }
+
+      speechUnlocked = true;
+
+      const utterance = new SpeechSynthesisUtterance("Annonces activées");
+      utterance.lang = "fr-FR";
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 0.01;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakText(text) {
+      if (!soundEnabled || !speechUnlocked || !text) {
         return;
       }
 
@@ -1201,17 +1322,7 @@
         return;
       }
 
-      if (speechQueueIndex >= speechQueue.length) {
-        speechQueueIndex = 0;
-
-        speechRepeatTimeout = setTimeout(() => {
-          speakNextInQueue();
-        }, 10000);
-
-        return;
-      }
-
-      const text = speechQueue[speechQueueIndex];
+      window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "fr-FR";
@@ -1219,57 +1330,46 @@
       utterance.pitch = 1;
       utterance.volume = 1;
 
-      utterance.onend = () => {
-        speechQueueIndex += 1;
-
-        setTimeout(() => {
-          speakNextInQueue();
-        }, 500);
-      };
-
-      utterance.onerror = () => {
-        speechQueueIndex += 1;
-
-        setTimeout(() => {
-          speakNextInQueue();
-        }, 500);
-      };
-
       window.speechSynthesis.speak(utterance);
     }
 
     function startAlarm(courtTexts) {
-      if (!soundEnabled || !Array.isArray(courtTexts) || !courtTexts.length) {
+      if (!soundEnabled || !speechUnlocked || !Array.isArray(courtTexts) || !courtTexts.length) {
         return;
       }
 
-      const newQueue = courtTexts.map(courtText => `OUVERTURE ${courtText}`);
-      const signature = newQueue.join("|");
+      const uniqueCourts = [...new Set(courtTexts.filter(Boolean))];
 
-      if (speechIsPlaying && lastWarningSignature === signature) {
+      if (!uniqueCourts.length) {
+        return;
+      }
+
+      const textToSpeak = uniqueCourts
+        .map(courtText => `OUVERTURE ${courtText}`)
+        .join(". ");
+
+      const signature = uniqueCourts.join("|");
+
+      if (lastWarningSignature === signature && speechRepeatTimeout) {
         return;
       }
 
       stopAlarm();
 
-      speechIsPlaying = true;
-      warningCourtQueue = courtTexts;
-      speechQueue = newQueue;
-      speechQueueIndex = 0;
       lastWarningSignature = signature;
 
-      speakNextInQueue();
+      speakText(textToSpeak);
+
+      speechRepeatTimeout = setInterval(() => {
+        speakText(textToSpeak);
+      }, 10000);
     }
 
     function stopAlarm() {
-      speechIsPlaying = false;
-      warningCourtQueue = [];
-      speechQueue = [];
-      speechQueueIndex = 0;
       lastWarningSignature = "";
 
       if (speechRepeatTimeout) {
-        clearTimeout(speechRepeatTimeout);
+        clearInterval(speechRepeatTimeout);
         speechRepeatTimeout = null;
       }
 
@@ -1285,6 +1385,42 @@
         if (!activeIds.has(id)) {
           acknowledgedWarningIds.delete(id);
         }
+      });
+    }
+
+    function setupSoundPermissionModal() {
+      const modal = document.getElementById("sound-permission-modal");
+      const enableButton = document.getElementById("enable-sound-btn");
+      const disableButton = document.getElementById("disable-sound-btn");
+      const soundButton = document.getElementById("sound-btn");
+
+      if (!modal || !enableButton || !disableButton) {
+        return;
+      }
+
+      enableButton.addEventListener("click", () => {
+        soundEnabled = true;
+        unlockSpeech();
+
+        if (soundButton) {
+          soundButton.textContent = "🔊";
+          soundButton.classList.add("sound-enabled");
+        }
+
+        modal.classList.add("hidden");
+        renderSchedule();
+      });
+
+      disableButton.addEventListener("click", () => {
+        soundEnabled = false;
+        stopAlarm();
+
+        if (soundButton) {
+          soundButton.textContent = "🔇";
+          soundButton.classList.remove("sound-enabled");
+        }
+
+        modal.classList.add("hidden");
       });
     }
 
@@ -1549,9 +1685,15 @@
 
       if (soundEnabled) {
         button.classList.add("sound-enabled");
+      } else {
+        button.classList.remove("sound-enabled");
       }
 
       button.addEventListener("click", () => {
+        if (!speechUnlocked) {
+          unlockSpeech();
+        }
+
         soundEnabled = !soundEnabled;
 
         if (soundEnabled) {
@@ -1977,6 +2119,7 @@
 
     setupFullscreenButton();
     setupSoundButton();
+    setupSoundPermissionModal();
     setupHiddenEditButton();
     setupReportModal();
     updateDateAndClock();

@@ -170,7 +170,14 @@ export default async function handler(req, res) {
     if (!allClosed) {
       return res.status(400).json({
         error: "Toutes les lignes du jour ne sont pas cochées",
-        date
+        date,
+        eventsNotClosed: events
+          .filter(event => !event.close)
+          .map(event => ({
+            heure: event.heure,
+            court: event.court,
+            feed: event.feed
+          }))
       });
     }
 
@@ -179,7 +186,8 @@ export default async function handler(req, res) {
     if (!recipients.length) {
       return res.status(400).json({
         error: "Aucun email actif trouvé dans Airtable",
-        table: REPORT_EMAILS_TABLE_NAME
+        table: REPORT_EMAILS_TABLE_NAME,
+        expectedFields: ["Email", "Nom", "Actif"]
       });
     }
 
@@ -192,62 +200,89 @@ export default async function handler(req, res) {
     const pdfBase64 = pdfBuffer.toString("base64");
     const filename = `report-feed-${date}.pdf`;
 
+    const resendPayload = {
+      from: REPORT_FROM_EMAIL,
+      to: recipients,
+      subject: `Report ouverture / fermeture des feed - ${date}`,
+      html: `
+        <p>Bonjour,</p>
+        <p>Veuillez trouver en pièce jointe le report ouverture / fermeture des feed du ${escapeHtml(date)}.</p>
+        ${
+          remarque
+            ? `<p><strong>Remarque :</strong><br>${escapeHtml(remarque).replace(/\n/g, "<br>")}</p>`
+            : ""
+        }
+        <p>Cordialement.</p>
+      `,
+      attachments: [
+        {
+          filename,
+          content: pdfBase64
+        }
+      ]
+    };
+
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        from: REPORT_FROM_EMAIL,
-        to: recipients,
-        subject: `Report ouverture / fermeture des feed - ${date}`,
-        html: `
-          <p>Bonjour,</p>
-          <p>Veuillez trouver en pièce jointe le report ouverture / fermeture des feed du ${date}.</p>
-          ${
-            remarque
-              ? `<p><strong>Remarque :</strong><br>${escapeHtml(remarque).replace(/\n/g, "<br>")}</p>`
-              : ""
-          }
-          <p>Cordialement.</p>
-        `,
-        attachments: [
-          {
-            filename,
-            content: pdfBase64
-          }
-        ]
-      })
+      body: JSON.stringify(resendPayload)
     });
 
     const resendData = await resendResponse.json();
 
     if (!resendResponse.ok) {
+      console.error("ERREUR RESEND:", resendData);
+      console.error("DESTINATAIRES:", recipients);
+      console.error("FROM:", REPORT_FROM_EMAIL);
+
       return res.status(resendResponse.status).json({
         error: "Erreur Resend lors de l'envoi email",
-        details: resendData
+        resendStatus: resendResponse.status,
+        resendDetails: resendData,
+        from: REPORT_FROM_EMAIL,
+        recipients,
+        hint:
+          "Avec onboarding@resend.dev, laisse actif uniquement l'email du compte Resend dans Airtable. Pour envoyer à plusieurs emails, vérifie un domaine dans Resend."
       });
     }
 
-    const savedReport = await saveReportRecord();
+    let savedReport = null;
+    let reportSaveError = null;
+
+    try {
+      savedReport = await saveReportRecord();
+    } catch (error) {
+      console.error("EMAIL ENVOYÉ MAIS ERREUR SAUVEGARDE REPORT:", error);
+      reportSaveError = error.data || error.message || error;
+    }
 
     return res.status(200).json({
       ok: true,
       date,
       recipients,
       resend: resendData,
-      report: {
-        id: savedReport.id,
-        envoye: savedReport.fields?.Envoyé || false,
-        dateEnvoi: savedReport.fields?.["Date envoi"] || ""
-      }
+      reportSaved: Boolean(savedReport),
+      reportSaveError,
+      report: savedReport
+        ? {
+            id: savedReport.id,
+            envoye: savedReport.fields?.Envoyé || false,
+            dateEnvoi: savedReport.fields?.["Date envoi"] || ""
+          }
+        : null
     });
 
   } catch (error) {
+    console.error("ERREUR SEND REPORT COMPLETE:", error);
+
     return res.status(error.status || 500).json({
       error: "Erreur serveur dans api/send-report.js",
-      details: error.data || error.message || error
+      message: error.message || null,
+      details: error.data || error.details || error,
+      stack: error.stack || null
     });
   }
 }
@@ -286,6 +321,7 @@ function generatePdfBuffer({ date, events, remarque }) {
     doc
       .fontSize(20)
       .font("Helvetica-Bold")
+      .fillColor("#111111")
       .text("OUVERTURE / FERMETURE DES FEED", {
         align: "center"
       });
@@ -295,6 +331,7 @@ function generatePdfBuffer({ date, events, remarque }) {
     doc
       .fontSize(13)
       .font("Helvetica-Bold")
+      .fillColor("#111111")
       .text(`Date : ${date}`, {
         align: "center"
       });
@@ -346,6 +383,7 @@ function generatePdfBuffer({ date, events, remarque }) {
     doc
       .fontSize(13)
       .font("Helvetica-Bold")
+      .fillColor("#111111")
       .text("Remarque :", 40, doc.y);
 
     doc.moveDown(0.4);
@@ -353,6 +391,7 @@ function generatePdfBuffer({ date, events, remarque }) {
     doc
       .fontSize(11)
       .font("Helvetica")
+      .fillColor("#111111")
       .text(remarque || "Aucune remarque.", {
         width: 500,
         align: "left"

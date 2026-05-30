@@ -299,8 +299,8 @@ function generatePdfBuffer({ date, events, remarque }) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
-      layout: "landscape",
-      margin: 24
+      layout: "portrait",
+      margin: 22
     });
 
     const chunks = [];
@@ -309,59 +309,84 @@ function generatePdfBuffer({ date, events, remarque }) {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
+    const pageWidth = doc.page.width;
+    const pageHeight = doc.page.height;
+    const margin = 22;
+
+    const usableWidth = pageWidth - margin * 2;
+    const footerHeight = 16;
+    const titleHeight = 46;
+    const remarkReservedHeight = remarque ? 84 : 54;
+    const headerHeight = 18;
+
+    const tableStartY = margin + titleHeight;
+    const maxTableBottom =
+      pageHeight - margin - footerHeight - remarkReservedHeight;
+
+    const availableRowsHeight =
+      maxTableBottom - tableStartY - headerHeight;
+
+    const rowCount = Math.max(events.length, 1);
+
+    const rowHeight = Math.max(
+      9,
+      Math.min(22, Math.floor(availableRowsHeight / rowCount))
+    );
+
+    const bodyFontSize =
+      rowHeight <= 10 ? 5.2 :
+      rowHeight <= 12 ? 6 :
+      rowHeight <= 14 ? 6.8 :
+      rowHeight <= 16 ? 7.4 :
+      rowHeight <= 18 ? 8 :
+      8.5;
+
+    const headerFontSize = Math.max(6.2, bodyFontSize);
+
     doc
       .fontSize(15)
       .font("Helvetica-Bold")
       .fillColor("#111111")
-      .text("OUVERTURE / FERMETURE DES FEED", {
+      .text("OUVERTURE / FERMETURE DES FEED", margin, margin, {
+        width: usableWidth,
         align: "center"
       });
-
-    doc.moveDown(0.25);
 
     doc
       .fontSize(10)
       .font("Helvetica-Bold")
       .fillColor("#111111")
-      .text(`Date : ${date}`, {
+      .text(`Date : ${date}`, margin, margin + 22, {
+        width: usableWidth,
         align: "center"
       });
 
-    doc.moveDown(0.7);
-
-    const startX = 24;
-    let y = doc.y;
+    const startX = margin;
+    let y = tableStartY;
 
     const columns = [
-      { label: "Ouverture", width: 80 },
-      { label: "Court", width: 70 },
-      { label: "Feed", width: 430 },
-      { label: "Close", width: 55 },
-      { label: "Fermeture", width: 95 }
+      { label: "Ouverture", width: 64 },
+      { label: "Court", width: 50 },
+      { label: "Feed", width: usableWidth - 64 - 50 - 45 - 74 },
+      { label: "Close", width: 45 },
+      { label: "Fermeture", width: 74 }
     ];
-
-    const headerHeight = 18;
-    const maxY = 515;
-
-    const availableHeightForRemark = remarque ? 62 : 26;
-    const availableRowsHeight = maxY - y - headerHeight - availableHeightForRemark;
-
-    const rowHeight = Math.max(
-      12,
-      Math.min(18, Math.floor(availableRowsHeight / Math.max(events.length, 1)))
-    );
-
-    const bodyFontSize = rowHeight <= 13 ? 6.5 : rowHeight <= 15 ? 7.2 : 8;
-    const headerFontSize = 8;
 
     drawTableHeader(doc, startX, y, columns, headerHeight, headerFontSize);
     y += headerHeight;
+
+    const feedMaxLength =
+      rowHeight <= 10 ? 38 :
+      rowHeight <= 12 ? 48 :
+      rowHeight <= 14 ? 62 :
+      rowHeight <= 16 ? 78 :
+      95;
 
     events.forEach(event => {
       const values = [
         event.heure || "",
         event.court || "",
-        truncateText(event.feed || "", rowHeight <= 13 ? 80 : 110),
+        truncateText(event.feed || "", feedMaxLength),
         event.close ? "Oui" : "Non",
         event.heureFermeture || ""
       ];
@@ -370,36 +395,44 @@ function generatePdfBuffer({ date, events, remarque }) {
       y += rowHeight;
     });
 
-    y += 10;
+    const remarkY = Math.min(
+      y + 12,
+      pageHeight - margin - footerHeight - remarkReservedHeight + 12
+    );
 
     doc
       .fontSize(9)
       .font("Helvetica-Bold")
       .fillColor("#111111")
-      .text("Remarque :", 24, y);
-
-    y += 12;
+      .text("Remarque :", margin, remarkY, {
+        width: usableWidth
+      });
 
     const remarkText = remarque || "Aucune remarque.";
-    const compactRemark = truncateText(remarkText, 360);
+
+    const remarkFontSize =
+      remarkText.length > 260 ? 6.5 :
+      remarkText.length > 160 ? 7.2 :
+      8;
 
     doc
-      .fontSize(8)
+      .fontSize(remarkFontSize)
       .font("Helvetica")
       .fillColor("#111111")
-      .text(compactRemark, 24, y, {
-        width: 760,
-        height: 45,
-        align: "left"
+      .text(truncateText(remarkText, 520), margin, remarkY + 13, {
+        width: usableWidth,
+        height: remarkReservedHeight - 28,
+        align: "left",
+        ellipsis: true
       });
 
     doc
-      .fontSize(7)
+      .fontSize(6.5)
       .fillColor("#666666")
       .text(`PDF généré le ${new Date().toLocaleString("fr-FR", {
         timeZone: "Europe/Paris"
-      })}`, 24, 555, {
-        width: 780,
+      })}`, margin, pageHeight - margin - 10, {
+        width: usableWidth,
         align: "right"
       });
 
@@ -414,7 +447,7 @@ function truncateText(value, maxLength) {
     return text;
   }
 
-  return text.slice(0, maxLength - 1) + "…";
+  return text.slice(0, Math.max(0, maxLength - 1)) + "…";
 }
 
 function drawTableHeader(doc, x, y, columns, rowHeight, fontSize) {
@@ -429,9 +462,10 @@ function drawTableHeader(doc, x, y, columns, rowHeight, fontSize) {
 
     doc
       .fillColor("#ffffff")
-      .text(column.label, currentX + 3, y + 5, {
-        width: column.width - 6,
-        height: rowHeight - 4
+      .text(column.label, currentX + 2.5, y + 5, {
+        width: column.width - 5,
+        height: rowHeight - 4,
+        ellipsis: true
       });
 
     currentX += column.width;
@@ -448,11 +482,13 @@ function drawTableRow(doc, x, y, columns, values, rowHeight, fontSize) {
       .rect(currentX, y, column.width, rowHeight)
       .fillAndStroke("#e6e9ec", "#ffffff");
 
+    const textY = y + Math.max(2, (rowHeight - fontSize) / 2 - 1);
+
     doc
       .fillColor("#111111")
-      .text(values[index], currentX + 3, y + 3, {
-        width: column.width - 6,
-        height: rowHeight - 4,
+      .text(values[index], currentX + 2.5, textY, {
+        width: column.width - 5,
+        height: rowHeight - 3,
         ellipsis: true
       });
 

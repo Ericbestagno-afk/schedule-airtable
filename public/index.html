@@ -1010,8 +1010,8 @@
             ⛶
           </button>
 
-          <button id="sound-btn" class="sound-btn sound-enabled" title="Activer / désactiver la voix">
-            🔊
+          <button id="sound-btn" class="sound-btn" title="Activer la voix">
+            🔇
           </button>
 
           <span id="edit-indicator" class="edit-indicator">✎</span>
@@ -1113,11 +1113,13 @@
     let lastAutoScrolledRecordId = null;
     let editMode = false;
 
-    let soundEnabled = true;
-    let speechUnlocked = true;
-    let speechRepeatTimeout = null;
+    let soundEnabled = false;
+    let speechInterval = null;
+    let speechIsPlaying = false;
+    let warningCourtQueue = [];
     let acknowledgedWarningIds = new Set();
     let lastWarningSignature = "";
+    let speechTimeout = null;
 
     let reportData = null;
 
@@ -1181,28 +1183,8 @@
       reportButton.disabled = !areAllTodayRowsClosed();
     }
 
-    function unlockSpeech() {
-      if (speechUnlocked) {
-        return;
-      }
-
-      if (!("speechSynthesis" in window)) {
-        return;
-      }
-
-      speechUnlocked = true;
-
-      const utterance = new SpeechSynthesisUtterance("Annonces activées");
-      utterance.lang = "fr-FR";
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.01;
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    function speakOneText(text, onEnd) {
-      if (!soundEnabled || !speechUnlocked || !text) {
+    function speakOneCourt(courtText, onEnd) {
+      if (!soundEnabled || !courtText) {
         return;
       }
 
@@ -1211,7 +1193,9 @@
         return;
       }
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(`OUVERTURE ${courtText}`);
       utterance.lang = "fr-FR";
       utterance.rate = 0.85;
       utterance.pitch = 1;
@@ -1233,12 +1217,12 @@
     }
 
     function speakCourtsSequentially(courts, index = 0) {
-      if (!soundEnabled || !speechUnlocked || !Array.isArray(courts) || !courts.length) {
+      if (!soundEnabled || !Array.isArray(courts) || !courts.length) {
         return;
       }
 
       if (index >= courts.length) {
-        speechRepeatTimeout = setTimeout(() => {
+        speechTimeout = setTimeout(() => {
           speakCourtsSequentially(courts, 0);
         }, 10000);
 
@@ -1247,15 +1231,15 @@
 
       const courtText = courts[index];
 
-      speakOneText(`OUVERTURE ${courtText}`, () => {
-        speechRepeatTimeout = setTimeout(() => {
+      speakOneCourt(courtText, () => {
+        speechTimeout = setTimeout(() => {
           speakCourtsSequentially(courts, index + 1);
         }, 10000);
       });
     }
 
     function startAlarm(courtTexts) {
-      if (!soundEnabled || !speechUnlocked || !Array.isArray(courtTexts) || !courtTexts.length) {
+      if (!soundEnabled || !Array.isArray(courtTexts) || !courtTexts.length) {
         return;
       }
 
@@ -1267,23 +1251,32 @@
 
       const signature = uniqueCourts.join("|");
 
-      if (lastWarningSignature === signature && speechRepeatTimeout) {
+      if (speechIsPlaying && lastWarningSignature === signature) {
         return;
       }
 
       stopAlarm();
 
+      speechIsPlaying = true;
+      warningCourtQueue = uniqueCourts;
       lastWarningSignature = signature;
 
       speakCourtsSequentially(uniqueCourts, 0);
     }
 
     function stopAlarm() {
+      speechIsPlaying = false;
+      warningCourtQueue = [];
       lastWarningSignature = "";
 
-      if (speechRepeatTimeout) {
-        clearTimeout(speechRepeatTimeout);
-        speechRepeatTimeout = null;
+      if (speechInterval) {
+        clearInterval(speechInterval);
+        speechInterval = null;
+      }
+
+      if (speechTimeout) {
+        clearTimeout(speechTimeout);
+        speechTimeout = null;
       }
 
       if ("speechSynthesis" in window) {
@@ -1567,15 +1560,21 @@
       }
 
       button.addEventListener("click", () => {
-        if (!speechUnlocked) {
-          unlockSpeech();
-        }
-
         soundEnabled = !soundEnabled;
 
         if (soundEnabled) {
           button.textContent = "🔊";
           button.classList.add("sound-enabled");
+
+          if ("speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+
+            const test = new SpeechSynthesisUtterance("Annonces activées");
+            test.lang = "fr-FR";
+            test.volume = 0.01;
+            window.speechSynthesis.speak(test);
+          }
+
           renderSchedule();
         } else {
           button.textContent = "🔇";

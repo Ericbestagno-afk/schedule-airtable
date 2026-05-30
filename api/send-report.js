@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
   try {
@@ -16,15 +17,15 @@ export default async function handler(req, res) {
     const REPORT_EMAILS_TABLE_NAME =
       process.env.AIRTABLE_REPORT_EMAILS_TABLE_NAME || "Report Emails";
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const REPORT_FROM_EMAIL = process.env.REPORT_FROM_EMAIL;
+    const GMAIL_USER = process.env.GMAIL_USER;
+    const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
     if (
       !AIRTABLE_TOKEN ||
       !BASE_ID ||
       !SCHEDULE_TABLE_NAME ||
-      !RESEND_API_KEY ||
-      !REPORT_FROM_EMAIL
+      !GMAIL_USER ||
+      !GMAIL_APP_PASSWORD
     ) {
       return res.status(500).json({
         error: "Variables Vercel manquantes",
@@ -32,8 +33,8 @@ export default async function handler(req, res) {
           AIRTABLE_TOKEN: AIRTABLE_TOKEN ? "OK" : "MANQUANT",
           AIRTABLE_BASE_ID: BASE_ID ? "OK" : "MANQUANT",
           AIRTABLE_TABLE_NAME: SCHEDULE_TABLE_NAME ? "OK" : "MANQUANT",
-          RESEND_API_KEY: RESEND_API_KEY ? "OK" : "MANQUANT",
-          REPORT_FROM_EMAIL: REPORT_FROM_EMAIL ? "OK" : "MANQUANT"
+          GMAIL_USER: GMAIL_USER ? "OK" : "MANQUANT",
+          GMAIL_APP_PASSWORD: GMAIL_APP_PASSWORD ? "OK" : "MANQUANT"
         }
       });
     }
@@ -195,12 +196,21 @@ export default async function handler(req, res) {
       remarque
     });
 
-    const pdfBase64 = pdfBuffer.toString("base64");
     const filename = `report-feed-${date}.pdf`;
 
-    const resendPayload = {
-      from: REPORT_FROM_EMAIL,
-      to: recipients,
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: GMAIL_USER,
+        pass: String(GMAIL_APP_PASSWORD).replace(/\s/g, "")
+      }
+    });
+
+    const mailResult = await transporter.sendMail({
+      from: `"Report Feed" <${GMAIL_USER}>`,
+      to: recipients.join(","),
       subject: `Report ouverture / fermeture des feed - ${date}`,
       html: `
         <p>Bonjour,</p>
@@ -215,37 +225,11 @@ export default async function handler(req, res) {
       attachments: [
         {
           filename,
-          content: pdfBase64
+          content: pdfBuffer,
+          contentType: "application/pdf"
         }
       ]
-    };
-
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(resendPayload)
     });
-
-    const resendData = await resendResponse.json();
-
-    if (!resendResponse.ok) {
-      console.error("ERREUR RESEND:", resendData);
-      console.error("DESTINATAIRES:", recipients);
-      console.error("FROM:", REPORT_FROM_EMAIL);
-
-      return res.status(resendResponse.status).json({
-        error: "Erreur Resend lors de l'envoi email",
-        resendStatus: resendResponse.status,
-        resendDetails: resendData,
-        from: REPORT_FROM_EMAIL,
-        recipients,
-        hint:
-          "Avec onboarding@resend.dev, laisse actif uniquement l'email du compte Resend dans Airtable. Pour envoyer à plusieurs emails, vérifie un domaine dans Resend."
-      });
-    }
 
     let savedReport = null;
     let reportSaveError = null;
@@ -253,7 +237,7 @@ export default async function handler(req, res) {
     try {
       savedReport = await saveReportRecord();
     } catch (error) {
-      console.error("EMAIL ENVOYÉ MAIS ERREUR SAUVEGARDE REPORT:", error);
+      console.error("EMAIL GMAIL ENVOYÉ MAIS ERREUR SAUVEGARDE REPORT:", error);
       reportSaveError = error.data || error.message || error;
     }
 
@@ -261,7 +245,12 @@ export default async function handler(req, res) {
       ok: true,
       date,
       recipients,
-      resend: resendData,
+      mail: {
+        messageId: mailResult.messageId,
+        accepted: mailResult.accepted,
+        rejected: mailResult.rejected,
+        response: mailResult.response
+      },
       reportSaved: Boolean(savedReport),
       reportSaveError,
       report: savedReport
@@ -273,11 +262,15 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("ERREUR SEND REPORT COMPLETE:", error);
+    console.error("ERREUR SEND REPORT GMAIL COMPLETE:", error);
 
     return res.status(error.status || 500).json({
-      error: "Erreur serveur dans api/send-report.js",
+      error: "Erreur serveur dans api/send-report.js Gmail",
       message: error.message || null,
+      code: error.code || null,
+      command: error.command || null,
+      response: error.response || null,
+      responseCode: error.responseCode || null,
       details: error.data || error.details || error,
       stack: error.stack || null
     });

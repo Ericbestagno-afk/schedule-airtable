@@ -17,14 +17,11 @@
       --black: #111111;
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
-
       --orange-height: clamp(150px, 20vh, 230px);
       --logo-size: clamp(120px, 11vw, 190px);
       --title-size: clamp(28px, 3.1vw, 52px);
-
       --green-height: clamp(48px, 7vh, 76px);
       --date-size: clamp(20px, 2.8vw, 44px);
-
       --table-header-size: clamp(14px, 1.35vw, 24px);
       --table-text-size: clamp(14px, 1.25vw, 22px);
       --row-height: clamp(32px, 4.2vh, 46px);
@@ -466,15 +463,24 @@
       display: none;
     }
 
-    .report-modal {
+    .report-modal,
+    .sound-permission-modal {
       position: fixed;
       inset: 0;
-      z-index: 9999;
       background: rgba(0, 0, 0, 0.65);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
+    }
+
+    .report-modal {
+      z-index: 9999;
+    }
+
+    .sound-permission-modal {
+      z-index: 10000;
+      background: rgba(0, 0, 0, 0.72);
     }
 
     .report-modal-content {
@@ -584,7 +590,9 @@
     }
 
     .report-save-btn,
-    .report-send-btn {
+    .report-send-btn,
+    .enable-sound-btn,
+    .disable-sound-btn {
       border: none;
       border-radius: 8px;
       padding: 12px 18px;
@@ -594,7 +602,8 @@
       text-transform: uppercase;
     }
 
-    .report-save-btn {
+    .report-save-btn,
+    .enable-sound-btn {
       background: var(--green-rg);
       color: white;
     }
@@ -604,20 +613,14 @@
       color: white;
     }
 
+    .disable-sound-btn {
+      background: #d9d9d9;
+      color: #111111;
+    }
+
     .report-send-btn:disabled {
       opacity: 0.4;
       cursor: not-allowed;
-    }
-
-    .sound-permission-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      background: rgba(0, 0, 0, 0.72);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
     }
 
     .sound-permission-content {
@@ -649,27 +652,6 @@
       display: flex;
       gap: 12px;
       justify-content: center;
-    }
-
-    .enable-sound-btn,
-    .disable-sound-btn {
-      border: none;
-      border-radius: 8px;
-      padding: 13px 18px;
-      font-size: 16px;
-      font-weight: 900;
-      cursor: pointer;
-      text-transform: uppercase;
-    }
-
-    .enable-sound-btn {
-      background: var(--green-rg);
-      color: white;
-    }
-
-    .disable-sound-btn {
-      background: #d9d9d9;
-      color: #111111;
     }
 
     @media (max-width: 900px) {
@@ -767,11 +749,7 @@
         padding: 6px 8px;
       }
 
-      .logo {
-        width: var(--logo-size);
-        height: var(--logo-size);
-      }
-
+      .logo,
       .hidden-edit-btn {
         width: var(--logo-size);
         height: var(--logo-size);
@@ -997,12 +975,15 @@
         font-size: 15px;
       }
 
-      .report-modal-footer {
+      .report-modal-footer,
+      .sound-permission-actions {
         flex-direction: column;
       }
 
       .report-save-btn,
-      .report-send-btn {
+      .report-send-btn,
+      .enable-sound-btn,
+      .disable-sound-btn {
         width: 100%;
       }
 
@@ -1016,15 +997,6 @@
 
       .sound-permission-content p {
         font-size: 16px;
-      }
-
-      .sound-permission-actions {
-        flex-direction: column;
-      }
-
-      .enable-sound-btn,
-      .disable-sound-btn {
-        width: 100%;
       }
     }
 
@@ -1312,7 +1284,7 @@
       window.speechSynthesis.speak(utterance);
     }
 
-    function speakText(text) {
+    function speakOneText(text, onEnd) {
       if (!soundEnabled || !speechUnlocked || !text) {
         return;
       }
@@ -1322,15 +1294,47 @@
         return;
       }
 
-      window.speechSynthesis.cancel();
-
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "fr-FR";
       utterance.rate = 0.85;
       utterance.pitch = 1;
       utterance.volume = 1;
 
+      utterance.onend = () => {
+        if (typeof onEnd === "function") {
+          onEnd();
+        }
+      };
+
+      utterance.onerror = () => {
+        if (typeof onEnd === "function") {
+          onEnd();
+        }
+      };
+
       window.speechSynthesis.speak(utterance);
+    }
+
+    function speakCourtsSequentially(courts, index = 0) {
+      if (!soundEnabled || !speechUnlocked || !Array.isArray(courts) || !courts.length) {
+        return;
+      }
+
+      if (index >= courts.length) {
+        speechRepeatTimeout = setTimeout(() => {
+          speakCourtsSequentially(courts, 0);
+        }, 10000);
+
+        return;
+      }
+
+      const courtText = courts[index];
+
+      speakOneText(`OUVERTURE ${courtText}`, () => {
+        speechRepeatTimeout = setTimeout(() => {
+          speakCourtsSequentially(courts, index + 1);
+        }, 3000);
+      });
     }
 
     function startAlarm(courtTexts) {
@@ -1344,10 +1348,6 @@
         return;
       }
 
-      const textToSpeak = uniqueCourts
-        .map(courtText => `OUVERTURE ${courtText}`)
-        .join(". ");
-
       const signature = uniqueCourts.join("|");
 
       if (lastWarningSignature === signature && speechRepeatTimeout) {
@@ -1358,18 +1358,14 @@
 
       lastWarningSignature = signature;
 
-      speakText(textToSpeak);
-
-      speechRepeatTimeout = setInterval(() => {
-        speakText(textToSpeak);
-      }, 10000);
+      speakCourtsSequentially(uniqueCourts, 0);
     }
 
     function stopAlarm() {
       lastWarningSignature = "";
 
       if (speechRepeatTimeout) {
-        clearInterval(speechRepeatTimeout);
+        clearTimeout(speechRepeatTimeout);
         speechRepeatTimeout = null;
       }
 

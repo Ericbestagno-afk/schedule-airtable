@@ -1,1 +1,6 @@
-
+{
+  "type": "module",
+  "dependencies": {
+    "pdfkit": "^0.15.0"
+  }
+}

@@ -23,8 +23,6 @@
       --title-size: clamp(28px, 3.1vw, 52px);
 
       --green-height: clamp(48px, 7vh, 76px);
-      --gap-after-green: 0px;
-
       --date-size: clamp(20px, 2.8vw, 44px);
 
       --table-header-size: clamp(14px, 1.35vw, 24px);
@@ -122,7 +120,6 @@
       text-transform: uppercase;
       line-height: 0.95;
       color: white;
-      white-space: normal;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -448,17 +445,9 @@
     }
 
     @keyframes blinkRed {
-      0% {
-        background: #9b0000;
-      }
-
-      50% {
-        background: #ff0000;
-      }
-
-      100% {
-        background: #9b0000;
-      }
+      0% { background: #9b0000; }
+      50% { background: #ff0000; }
+      100% { background: #9b0000; }
     }
 
     .past {
@@ -469,10 +458,6 @@
     .past .close-time-input {
       opacity: 1;
     }
-
-    /* =========================
-       MODALE REPORT
-    ========================= */
 
     .report-modal.hidden {
       display: none;
@@ -625,7 +610,6 @@
       :root {
         --orange-height: clamp(120px, 17vh, 170px);
         --green-height: clamp(42px, 6vh, 60px);
-        --gap-after-green: 0px;
         --logo-size: clamp(90px, 14vw, 120px);
         --title-size: clamp(22px, 5vw, 38px);
         --date-size: clamp(16px, 3.6vw, 24px);
@@ -670,16 +654,11 @@
       }
     }
 
-    /* =========================
-       TÉLÉPHONE
-    ========================= */
-
     @media (max-width: 600px) {
       :root {
         --screen-padding: 0px;
         --orange-height: auto;
         --green-height: auto;
-        --gap-after-green: 0px;
         --logo-size: 54px;
         --title-size: 17px;
         --date-size: 16px;
@@ -858,25 +837,11 @@
         padding-right: 8px;
       }
 
-      .schedule td:nth-child(1)::before {
-        content: "Ouverture";
-      }
-
-      .schedule td:nth-child(2)::before {
-        content: "Court";
-      }
-
-      .schedule td:nth-child(3)::before {
-        content: "Feed";
-      }
-
-      .schedule td:nth-child(4)::before {
-        content: "Close";
-      }
-
-      .schedule td:nth-child(5)::before {
-        content: "Fermeture";
-      }
+      .schedule td:nth-child(1)::before { content: "Ouverture"; }
+      .schedule td:nth-child(2)::before { content: "Court"; }
+      .schedule td:nth-child(3)::before { content: "Feed"; }
+      .schedule td:nth-child(4)::before { content: "Close"; }
+      .schedule td:nth-child(5)::before { content: "Fermeture"; }
 
       .close-checkbox {
         width: 28px;
@@ -984,7 +949,6 @@
       :root {
         --orange-height: clamp(170px, 20vh, 250px);
         --green-height: clamp(70px, 7vh, 95px);
-        --gap-after-green: 0px;
         --logo-size: clamp(170px, 9vw, 210px);
         --title-size: clamp(42px, 3.1vw, 60px);
         --date-size: clamp(38px, 2.8vw, 56px);
@@ -1006,7 +970,6 @@
       :root {
         --orange-height: 125px;
         --green-height: 42px;
-        --gap-after-green: 0px;
         --logo-size: 105px;
         --title-size: 24px;
         --date-size: 18px;
@@ -1358,14 +1321,28 @@
         const data = await response.json();
 
         if (!response.ok) {
-          console.error(data);
-          throw new Error(data.error || "Erreur envoi report");
+          console.error("ERREUR SEND REPORT:", data);
+
+          const detail =
+            data.resendDetails?.message ||
+            data.resendDetails?.name ||
+            data.details?.message ||
+            data.details?.error ||
+            data.message ||
+            data.error ||
+            JSON.stringify(data);
+
+          throw new Error(detail);
         }
 
         sendButton.textContent = "Envoyé";
 
+        const warning = data.reportSaved === false
+          ? "\n\nAttention : email envoyé, mais sauvegarde du report non confirmée dans Airtable."
+          : "";
+
         alert(
-          `Report envoyé avec succès à ${data.recipients.length} destinataire(s).`
+          `Report envoyé avec succès à ${data.recipients.length} destinataire(s).${warning}`
         );
 
         setTimeout(() => {

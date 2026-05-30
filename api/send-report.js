@@ -299,7 +299,8 @@ function generatePdfBuffer({ date, events, remarque }) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
-      margin: 40
+      layout: "landscape",
+      margin: 24
     });
 
     const chunks = [];
@@ -309,92 +310,96 @@ function generatePdfBuffer({ date, events, remarque }) {
     doc.on("error", reject);
 
     doc
-      .fontSize(20)
+      .fontSize(15)
       .font("Helvetica-Bold")
       .fillColor("#111111")
       .text("OUVERTURE / FERMETURE DES FEED", {
         align: "center"
       });
 
-    doc.moveDown(0.5);
+    doc.moveDown(0.25);
 
     doc
-      .fontSize(13)
+      .fontSize(10)
       .font("Helvetica-Bold")
       .fillColor("#111111")
       .text(`Date : ${date}`, {
         align: "center"
       });
 
-    doc.moveDown(1.2);
+    doc.moveDown(0.7);
 
-    const startX = 40;
+    const startX = 24;
     let y = doc.y;
 
     const columns = [
-      { label: "Ouverture", width: 75 },
-      { label: "Court", width: 60 },
-      { label: "Feed", width: 220 },
+      { label: "Ouverture", width: 80 },
+      { label: "Court", width: 70 },
+      { label: "Feed", width: 430 },
       { label: "Close", width: 55 },
-      { label: "Fermeture", width: 90 }
+      { label: "Fermeture", width: 95 }
     ];
 
-    drawTableHeader(doc, startX, y, columns);
-    y += 24;
+    const headerHeight = 18;
+    const maxY = 515;
+
+    const availableHeightForRemark = remarque ? 62 : 26;
+    const availableRowsHeight = maxY - y - headerHeight - availableHeightForRemark;
+
+    const rowHeight = Math.max(
+      12,
+      Math.min(18, Math.floor(availableRowsHeight / Math.max(events.length, 1)))
+    );
+
+    const bodyFontSize = rowHeight <= 13 ? 6.5 : rowHeight <= 15 ? 7.2 : 8;
+    const headerFontSize = 8;
+
+    drawTableHeader(doc, startX, y, columns, headerHeight, headerFontSize);
+    y += headerHeight;
 
     events.forEach(event => {
-      const rowHeight = 28;
-
-      if (y + rowHeight > 760) {
-        doc.addPage();
-        y = 40;
-        drawTableHeader(doc, startX, y, columns);
-        y += 24;
-      }
-
       const values = [
         event.heure || "",
         event.court || "",
-        event.feed || "",
+        truncateText(event.feed || "", rowHeight <= 13 ? 80 : 110),
         event.close ? "Oui" : "Non",
         event.heureFermeture || ""
       ];
 
-      drawTableRow(doc, startX, y, columns, values, rowHeight);
+      drawTableRow(doc, startX, y, columns, values, rowHeight, bodyFontSize);
       y += rowHeight;
     });
 
-    doc.moveDown(2);
-
-    if (doc.y > 700) {
-      doc.addPage();
-    }
-
-    doc
-      .fontSize(13)
-      .font("Helvetica-Bold")
-      .fillColor("#111111")
-      .text("Remarque :", 40, doc.y);
-
-    doc.moveDown(0.4);
-
-    doc
-      .fontSize(11)
-      .font("Helvetica")
-      .fillColor("#111111")
-      .text(remarque || "Aucune remarque.", {
-        width: 500,
-        align: "left"
-      });
-
-    doc.moveDown(2);
+    y += 10;
 
     doc
       .fontSize(9)
+      .font("Helvetica-Bold")
+      .fillColor("#111111")
+      .text("Remarque :", 24, y);
+
+    y += 12;
+
+    const remarkText = remarque || "Aucune remarque.";
+    const compactRemark = truncateText(remarkText, 360);
+
+    doc
+      .fontSize(8)
+      .font("Helvetica")
+      .fillColor("#111111")
+      .text(compactRemark, 24, y, {
+        width: 760,
+        height: 45,
+        align: "left"
+      });
+
+    doc
+      .fontSize(7)
       .fillColor("#666666")
       .text(`PDF généré le ${new Date().toLocaleString("fr-FR", {
         timeZone: "Europe/Paris"
-      })}`, {
+      })}`, 24, 555, {
+        width: 780,
         align: "right"
       });
 
@@ -402,31 +407,41 @@ function generatePdfBuffer({ date, events, remarque }) {
   });
 }
 
-function drawTableHeader(doc, x, y, columns) {
+function truncateText(value, maxLength) {
+  const text = String(value || "");
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return text.slice(0, maxLength - 1) + "…";
+}
+
+function drawTableHeader(doc, x, y, columns, rowHeight, fontSize) {
   let currentX = x;
 
-  doc.font("Helvetica-Bold").fontSize(9).fillColor("#ffffff");
+  doc.font("Helvetica-Bold").fontSize(fontSize).fillColor("#ffffff");
 
   columns.forEach(column => {
     doc
-      .rect(currentX, y, column.width, 24)
+      .rect(currentX, y, column.width, rowHeight)
       .fillAndStroke("#0f6680", "#ffffff");
 
     doc
       .fillColor("#ffffff")
-      .text(column.label, currentX + 4, y + 7, {
-        width: column.width - 8,
-        height: 14
+      .text(column.label, currentX + 3, y + 5, {
+        width: column.width - 6,
+        height: rowHeight - 4
       });
 
     currentX += column.width;
   });
 }
 
-function drawTableRow(doc, x, y, columns, values, rowHeight) {
+function drawTableRow(doc, x, y, columns, values, rowHeight, fontSize) {
   let currentX = x;
 
-  doc.font("Helvetica").fontSize(8).fillColor("#111111");
+  doc.font("Helvetica").fontSize(fontSize).fillColor("#111111");
 
   columns.forEach((column, index) => {
     doc
@@ -435,9 +450,9 @@ function drawTableRow(doc, x, y, columns, values, rowHeight) {
 
     doc
       .fillColor("#111111")
-      .text(values[index], currentX + 4, y + 7, {
-        width: column.width - 8,
-        height: rowHeight - 10,
+      .text(values[index], currentX + 3, y + 3, {
+        width: column.width - 6,
+        height: rowHeight - 4,
         ellipsis: true
       });
 

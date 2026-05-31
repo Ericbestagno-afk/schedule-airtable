@@ -17,14 +17,11 @@
       --black: #111111;
 
       --screen-padding: clamp(8px, 1.5vw, 24px);
-
       --orange-height: clamp(150px, 20vh, 230px);
       --logo-size: clamp(120px, 11vw, 190px);
       --title-size: clamp(28px, 3.1vw, 52px);
-
       --green-height: clamp(48px, 7vh, 76px);
       --date-size: clamp(20px, 2.8vw, 44px);
-
       --table-header-size: clamp(14px, 1.35vw, 24px);
       --table-text-size: clamp(14px, 1.25vw, 22px);
       --row-height: clamp(32px, 4.2vh, 46px);
@@ -139,7 +136,7 @@
       min-height: var(--green-height);
       background: var(--green-rg);
       display: grid;
-      grid-template-columns: minmax(150px, 18vw) 1fr minmax(220px, 24vw);
+      grid-template-columns: minmax(220px, 22vw) 1fr minmax(220px, 24vw);
       align-items: center;
       padding: 0 clamp(16px, 3vw, 50px);
       border-top: 3px solid white;
@@ -155,7 +152,8 @@
     }
 
     .fullscreen-btn,
-    .sound-btn {
+    .sound-btn,
+    .refresh-btn {
       width: 46px;
       height: 46px;
       border: 2px solid white;
@@ -169,12 +167,14 @@
     }
 
     .fullscreen-btn:hover,
-    .sound-btn:hover {
+    .sound-btn:hover,
+    .refresh-btn:hover {
       background: rgba(255, 255, 255, 0.15);
     }
 
     .fullscreen-btn:active,
-    .sound-btn:active {
+    .sound-btn:active,
+    .refresh-btn:active {
       transform: scale(0.96);
     }
 
@@ -430,6 +430,7 @@
 
     .warning {
       animation: blinkRed 0.8s infinite;
+      cursor: pointer;
     }
 
     .warning td {
@@ -607,54 +608,6 @@
       cursor: not-allowed;
     }
 
-    @media (max-width: 900px) {
-      :root {
-        --orange-height: clamp(120px, 17vh, 170px);
-        --green-height: clamp(42px, 6vh, 60px);
-        --logo-size: clamp(90px, 14vw, 120px);
-        --title-size: clamp(22px, 5vw, 38px);
-        --date-size: clamp(16px, 3.6vw, 24px);
-        --table-header-size: clamp(13px, 3.2vw, 20px);
-        --table-text-size: clamp(13px, 3vw, 18px);
-        --row-height: clamp(32px, 4.2vh, 44px);
-      }
-
-      .top-band {
-        grid-template-columns: 110px 1fr 110px;
-        padding: 0 16px 8px;
-      }
-
-      .green-info-bar {
-        grid-template-columns: 145px 1fr 190px;
-        padding: 0 16px;
-      }
-
-      .fullscreen-btn,
-      .sound-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 22px;
-      }
-
-      .edit-indicator {
-        font-size: 26px;
-      }
-
-      .schedule th,
-      .schedule td {
-        padding-left: 6px;
-        padding-right: 6px;
-      }
-
-      .col-close-time {
-        min-width: 170px;
-      }
-
-      .close-time-input {
-        width: 115px;
-      }
-    }
-
     @media (max-width: 600px) {
       :root {
         --screen-padding: 0px;
@@ -702,21 +655,10 @@
         padding: 6px 8px;
       }
 
-      .logo {
-        width: var(--logo-size);
-        height: var(--logo-size);
-      }
-
+      .logo,
       .hidden-edit-btn {
         width: var(--logo-size);
         height: var(--logo-size);
-      }
-
-      .main-title {
-        font-size: var(--title-size);
-        line-height: 1.05;
-        letter-spacing: 0.5px;
-        text-align: center;
       }
 
       .green-info-bar {
@@ -734,18 +676,6 @@
         grid-row: 3;
         justify-self: center;
         margin-top: 2px;
-      }
-
-      .fullscreen-btn,
-      .sound-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 19px;
-        border-radius: 7px;
-      }
-
-      .edit-indicator {
-        font-size: 22px;
       }
 
       .date-zone {
@@ -769,9 +699,13 @@
         font-size: 20px;
       }
 
-      .report-btn {
-        font-size: 13px;
-        padding: 6px 10px;
+      .fullscreen-btn,
+      .sound-btn,
+      .refresh-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 19px;
+        border-radius: 7px;
       }
 
       .table-zone {
@@ -806,10 +740,6 @@
         background: var(--grey-line);
       }
 
-      .schedule tbody tr:nth-child(even) {
-        background: var(--grey-line-alt);
-      }
-
       .schedule td {
         display: grid;
         grid-template-columns: 42% 58%;
@@ -826,10 +756,6 @@
         text-overflow: unset;
         text-align: left !important;
         line-height: 1.15;
-      }
-
-      .schedule td:last-child {
-        border-bottom: none;
       }
 
       .schedule td::before {
@@ -858,42 +784,9 @@
         padding: 4px 6px;
       }
 
-      .warning {
-        animation: blinkRed 0.8s infinite;
-      }
-
       .warning td,
       .warning td::before {
         color: white !important;
-      }
-
-      .warning .close-time-input {
-        color: #111111 !important;
-      }
-
-      .warning .close-time-input:disabled {
-        color: #555555 !important;
-      }
-
-      .overdue-unclosed td,
-      .overdue-unclosed td::before {
-        color: #d00000 !important;
-        font-weight: 900;
-      }
-
-      .past {
-        opacity: 0.45;
-      }
-
-      .pending-remove {
-        opacity: 0.55;
-      }
-
-      .empty-message {
-        display: block;
-        font-size: 18px;
-        padding: 24px 12px;
-        text-align: center;
       }
 
       .report-modal {
@@ -907,35 +800,6 @@
         border-radius: 10px;
       }
 
-      .report-modal-header {
-        padding: 12px;
-      }
-
-      .report-modal-header h2 {
-        font-size: 19px;
-      }
-
-      .report-close-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 24px;
-      }
-
-      .report-modal-body {
-        padding: 12px;
-      }
-
-      .report-table th,
-      .report-table td {
-        font-size: 13px;
-        padding: 7px;
-      }
-
-      .report-remark {
-        min-height: 120px;
-        font-size: 15px;
-      }
-
       .report-modal-footer {
         flex-direction: column;
       }
@@ -945,62 +809,12 @@
         width: 100%;
       }
     }
-
-    @media (min-width: 1600px) {
-      :root {
-        --orange-height: clamp(170px, 20vh, 250px);
-        --green-height: clamp(70px, 7vh, 95px);
-        --logo-size: clamp(170px, 9vw, 210px);
-        --title-size: clamp(42px, 3.1vw, 60px);
-        --date-size: clamp(38px, 2.8vw, 56px);
-        --table-header-size: clamp(20px, 1.35vw, 28px);
-        --table-text-size: clamp(18px, 1.25vw, 26px);
-        --row-height: clamp(38px, 4.2vh, 52px);
-      }
-
-      .col-close-time {
-        min-width: 250px;
-      }
-
-      .close-time-input {
-        width: 150px;
-      }
-    }
-
-    @media (max-height: 650px) {
-      :root {
-        --orange-height: 125px;
-        --green-height: 42px;
-        --logo-size: 105px;
-        --title-size: 24px;
-        --date-size: 18px;
-        --table-header-size: 14px;
-        --table-text-size: 14px;
-        --row-height: 30px;
-      }
-
-      .top-band {
-        grid-template-columns: 125px 1fr 125px;
-        padding: 0 16px 6px;
-      }
-
-      .close-checkbox {
-        width: 18px;
-        height: 18px;
-      }
-
-      .close-time-input {
-        width: 90px;
-        font-size: 14px;
-      }
-    }
   </style>
 </head>
 
 <body>
   <div class="screen">
     <div class="container">
-
       <header class="top-band">
         <img src="./logo-rg.png" alt="Roland Garros" class="logo left" />
 
@@ -1016,29 +830,17 @@
 
       <section class="green-info-bar">
         <div class="green-actions">
-          <button id="fullscreen-btn" class="fullscreen-btn" title="Plein écran">
-            ⛶
-          </button>
-
-          <button id="sound-btn" class="sound-btn" title="Activer la voix">
-            🔇
-          </button>
-
+          <button id="fullscreen-btn" class="fullscreen-btn" title="Plein écran">⛶</button>
+          <button id="sound-btn" class="sound-btn" title="Activer la voix">🔇</button>
+          <button id="refresh-btn" class="refresh-btn" title="Actualiser depuis Airtable">↻</button>
           <span id="edit-indicator" class="edit-indicator">✎</span>
         </div>
 
-        <div class="date-zone" id="date-du-jour">
-          DATE DU JOUR
-        </div>
+        <div class="date-zone" id="date-du-jour">DATE DU JOUR</div>
 
         <div class="clock-report-zone">
-          <button id="report-btn" class="report-btn" disabled>
-            Report
-          </button>
-
-          <div class="clock-zone" id="heure-actuelle">
-            HEURE
-          </div>
+          <button id="report-btn" class="report-btn" disabled>Report</button>
+          <div class="clock-zone" id="heure-actuelle">HEURE</div>
         </div>
       </section>
 
@@ -1061,7 +863,6 @@
           </tbody>
         </table>
       </main>
-
     </div>
   </div>
 
@@ -1094,9 +895,7 @@
           </table>
         </div>
 
-        <label class="report-remark-label" for="report-remark">
-          Remarque
-        </label>
+        <label class="report-remark-label" for="report-remark">Remarque</label>
 
         <textarea
           id="report-remark"
@@ -1106,13 +905,8 @@
       </div>
 
       <div class="report-modal-footer">
-        <button id="report-save-btn" class="report-save-btn">
-          Enregistrer
-        </button>
-
-        <button id="report-send-btn" class="report-send-btn">
-          Envoyer
-        </button>
+        <button id="report-save-btn" class="report-save-btn">Enregistrer</button>
+        <button id="report-send-btn" class="report-send-btn">Envoyer</button>
       </div>
     </div>
   </div>
@@ -1124,9 +918,11 @@
     let editMode = false;
 
     let soundEnabled = false;
-    let speechInterval = null;
     let speechIsPlaying = false;
-    let lastSpokenCourt = "";
+    let warningCourtQueue = [];
+    let acknowledgedWarningIds = new Set();
+    let lastWarningSignature = "";
+    let speechTimeout = null;
 
     let reportData = null;
 
@@ -1139,6 +935,76 @@
         month: "2-digit",
         day: "2-digit"
       }).format(new Date());
+    }
+
+    function getLocalStateKey() {
+      return `feedScheduleLocalState:${getTodayParis()}`;
+    }
+
+    function getLocalRemarkKey() {
+      return `feedReportRemark:${getTodayParis()}`;
+    }
+
+    function saveLocalState() {
+      const state = events.map(event => ({
+        id: event.id,
+        date: event.date,
+        close: Boolean(event.close),
+        heureFermeture: event.heureFermeture || "",
+        modifiedLocally: Boolean(event.modifiedLocally)
+      }));
+
+      localStorage.setItem(getLocalStateKey(), JSON.stringify(state));
+    }
+
+    function restoreLocalState() {
+      const saved = localStorage.getItem(getLocalStateKey());
+
+      if (!saved) {
+        return;
+      }
+
+      let localEvents = [];
+
+      try {
+        localEvents = JSON.parse(saved);
+      } catch (error) {
+        localEvents = [];
+      }
+
+      events = events.map(event => {
+        const localEvent = localEvents.find(item => item.id === event.id);
+
+        if (!localEvent) {
+          return event;
+        }
+
+        return {
+          ...event,
+          close: Boolean(localEvent.close),
+          heureFermeture: localEvent.heureFermeture || "",
+          modifiedLocally: Boolean(localEvent.modifiedLocally)
+        };
+      });
+    }
+
+    function hasLocalModifications() {
+      return events.some(event => event.modifiedLocally);
+    }
+
+    function clearLocalModifications() {
+      events = events.map(event => ({
+        ...event,
+        modifiedLocally: false
+      }));
+
+      saveLocalState();
+    }
+
+    function getTodayEvents() {
+      const todayParis = getTodayParis();
+
+      return events.filter(event => event.date === todayParis);
     }
 
     function isOldEvent(event) {
@@ -1165,13 +1031,13 @@
       setTimeout(() => {
         events = events.filter(item => item.id !== event.id);
         pendingRemovalIds.delete(event.id);
+        saveLocalState();
         renderSchedule();
       }, 3000);
     }
 
     function areAllTodayRowsClosed() {
-      const todayParis = getTodayParis();
-      const todayEvents = events.filter(event => event.date === todayParis);
+      const todayEvents = getTodayEvents();
 
       if (!todayEvents.length) {
         return false;
@@ -1190,8 +1056,8 @@
       reportButton.disabled = !areAllTodayRowsClosed();
     }
 
-    function speakCourt(text) {
-      if (!soundEnabled || !text) {
+    function speakOneCourt(courtText, onEnd) {
+      if (!soundEnabled || !courtText) {
         return;
       }
 
@@ -1202,43 +1068,83 @@
 
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(`OUVERTURE ${text}`);
+      const utterance = new SpeechSynthesisUtterance(`OUVERTURE ${courtText}`);
       utterance.lang = "fr-FR";
       utterance.rate = 0.85;
       utterance.pitch = 1;
       utterance.volume = 1;
 
+      utterance.onend = () => {
+        if (typeof onEnd === "function") {
+          onEnd();
+        }
+      };
+
+      utterance.onerror = () => {
+        if (typeof onEnd === "function") {
+          onEnd();
+        }
+      };
+
       window.speechSynthesis.speak(utterance);
     }
 
-    function startAlarm(courtText) {
-      if (!soundEnabled || !courtText) {
+    function speakCourtsSequentially(courts, index = 0) {
+      if (!soundEnabled || !Array.isArray(courts) || !courts.length) {
         return;
       }
 
-      if (speechIsPlaying && lastSpokenCourt === courtText) {
+      if (index >= courts.length) {
+        speechTimeout = setTimeout(() => {
+          speakCourtsSequentially(courts, 0);
+        }, 10000);
+
+        return;
+      }
+
+      const courtText = courts[index];
+
+      speakOneCourt(courtText, () => {
+        speechTimeout = setTimeout(() => {
+          speakCourtsSequentially(courts, index + 1);
+        }, 10000);
+      });
+    }
+
+    function startAlarm(courtTexts) {
+      if (!soundEnabled || !Array.isArray(courtTexts) || !courtTexts.length) {
+        return;
+      }
+
+      const uniqueCourts = [...new Set(courtTexts.filter(Boolean))];
+
+      if (!uniqueCourts.length) {
+        return;
+      }
+
+      const signature = uniqueCourts.join("|");
+
+      if (speechIsPlaying && lastWarningSignature === signature) {
         return;
       }
 
       stopAlarm();
 
       speechIsPlaying = true;
-      lastSpokenCourt = courtText;
+      warningCourtQueue = uniqueCourts;
+      lastWarningSignature = signature;
 
-      speakCourt(courtText);
-
-      speechInterval = setInterval(() => {
-        speakCourt(lastSpokenCourt);
-      }, 10000);
+      speakCourtsSequentially(uniqueCourts, 0);
     }
 
     function stopAlarm() {
       speechIsPlaying = false;
-      lastSpokenCourt = "";
+      warningCourtQueue = [];
+      lastWarningSignature = "";
 
-      if (speechInterval) {
-        clearInterval(speechInterval);
-        speechInterval = null;
+      if (speechTimeout) {
+        clearTimeout(speechTimeout);
+        speechTimeout = null;
       }
 
       if ("speechSynthesis" in window) {
@@ -1246,61 +1152,87 @@
       }
     }
 
-    async function openReportModal() {
+    function clearOldAcknowledgements() {
+      const activeIds = new Set(events.map(event => event.id));
+
+      acknowledgedWarningIds.forEach(id => {
+        if (!activeIds.has(id)) {
+          acknowledgedWarningIds.delete(id);
+        }
+      });
+    }
+
+    async function loadSchedule({ force = false } = {}) {
+      if (hasLocalModifications() && force) {
+        const confirmRefresh = confirm(
+          "Des modifications locales ne sont pas encore enregistrées dans Airtable. Les remplacer par les données Airtable ?"
+        );
+
+        if (!confirmRefresh) {
+          return;
+        }
+
+        localStorage.removeItem(getLocalStateKey());
+      }
+
+      try {
+        const response = await fetch("/api/schedule");
+
+        if (!response.ok) {
+          throw new Error("Erreur API");
+        }
+
+        const data = await response.json();
+
+        events = Array.isArray(data) ? data : data.events || [];
+
+        if (!force) {
+          restoreLocalState();
+        }
+
+        clearOldAcknowledgements();
+        renderSchedule();
+
+      } catch (error) {
+        document.getElementById("schedule-body").innerHTML = `
+          <tr>
+            <td colspan="5" class="empty-message">
+              Erreur de chargement du schedule
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function openReportModal() {
       const modal = document.getElementById("report-modal");
       const reportDate = document.getElementById("report-date");
       const reportBody = document.getElementById("report-body");
       const reportRemark = document.getElementById("report-remark");
 
       const todayParis = getTodayParis();
+      const reportEvents = getTodayEvents();
 
       modal.classList.remove("hidden");
       reportDate.textContent = `Date : ${todayParis}`;
-      reportBody.innerHTML = `
-        <tr>
-          <td colspan="5">Chargement...</td>
-        </tr>
-      `;
-      reportRemark.value = "";
+      reportRemark.value = localStorage.getItem(getLocalRemarkKey()) || "";
 
-      try {
-        const response = await fetch(`/api/report?date=${encodeURIComponent(todayParis)}`);
-
-        if (!response.ok) {
-          throw new Error("Erreur chargement report");
-        }
-
-        const data = await response.json();
-        reportData = data;
-
-        const reportEvents = data.events || [];
-
-        if (!reportEvents.length) {
-          reportBody.innerHTML = `
-            <tr>
-              <td colspan="5">Aucune ligne pour aujourd'hui</td>
-            </tr>
-          `;
-        } else {
-          reportBody.innerHTML = reportEvents.map(event => `
-            <tr>
-              <td>${event.heure || ""}</td>
-              <td>${event.court || ""}</td>
-              <td>${event.feed || ""}</td>
-              <td>${event.close ? "Oui" : "Non"}</td>
-              <td>${event.heureFermeture || ""}</td>
-            </tr>
-          `).join("");
-        }
-
-        reportRemark.value = data.report?.remarque || "";
-
-      } catch (error) {
+      if (!reportEvents.length) {
         reportBody.innerHTML = `
           <tr>
-            <td colspan="5">Erreur de chargement du report</td>
+            <td colspan="5">Aucune ligne pour aujourd'hui</td>
           </tr>
         `;
+      } else {
+        reportBody.innerHTML = reportEvents.map(event => `
+          <tr>
+            <td>${event.heure || ""}</td>
+            <td>${event.court || ""}</td>
+            <td>${event.feed || ""}</td>
+            <td>${event.close ? "Oui" : "Non"}</td>
+            <td>${event.heureFermeture || ""}</td>
+          </tr>
+        `).join("");
       }
     }
 
@@ -1329,18 +1261,21 @@
           },
           body: JSON.stringify({
             date: todayParis,
-            remarque: reportRemark.value || ""
+            remarque: reportRemark.value || "",
+            events: getTodayEvents()
           })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error("Erreur enregistrement remarque");
+          throw new Error(data.error || data.message || "Erreur enregistrement report");
         }
 
-        const data = await response.json();
-        reportData = data;
+        localStorage.setItem(getLocalRemarkKey(), reportRemark.value || "");
+        clearLocalModifications();
 
-        saveButton.textContent = "Remarque enregistrée";
+        saveButton.textContent = "Enregistré";
 
         setTimeout(() => {
           saveButton.textContent = "Enregistrer";
@@ -1348,7 +1283,7 @@
         }, 1500);
 
       } catch (error) {
-        alert("Erreur lors de l'enregistrement de la remarque");
+        alert(`Erreur lors de l'enregistrement : ${error.message}`);
         saveButton.textContent = "Enregistrer";
         saveButton.disabled = false;
       }
@@ -1371,18 +1306,15 @@
           },
           body: JSON.stringify({
             date: todayParis,
-            remarque: reportRemark.value || ""
+            remarque: reportRemark.value || "",
+            events: getTodayEvents()
           })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          console.error("ERREUR SEND REPORT:", data);
-
           const detail =
-            data.resendDetails?.message ||
-            data.resendDetails?.name ||
             data.details?.message ||
             data.details?.error ||
             data.message ||
@@ -1392,15 +1324,12 @@
           throw new Error(detail);
         }
 
+        localStorage.setItem(getLocalRemarkKey(), reportRemark.value || "");
+        clearLocalModifications();
+
         sendButton.textContent = "Envoyé";
 
-        const warning = data.reportSaved === false
-          ? "\n\nAttention : email envoyé, mais sauvegarde du report non confirmée dans Airtable."
-          : "";
-
-        alert(
-          `Report envoyé avec succès à ${data.recipients.length} destinataire(s).${warning}`
-        );
+        alert(`Report envoyé avec succès à ${data.recipients.length} destinataire(s).`);
 
         setTimeout(() => {
           closeReportModal();
@@ -1503,17 +1432,48 @@
         return;
       }
 
+      button.textContent = soundEnabled ? "🔊" : "🔇";
+
+      if (soundEnabled) {
+        button.classList.add("sound-enabled");
+      } else {
+        button.classList.remove("sound-enabled");
+      }
+
       button.addEventListener("click", () => {
         soundEnabled = !soundEnabled;
 
         if (soundEnabled) {
           button.textContent = "🔊";
           button.classList.add("sound-enabled");
+
+          if ("speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+
+            const test = new SpeechSynthesisUtterance("Annonces activées");
+            test.lang = "fr-FR";
+            test.volume = 0.01;
+            window.speechSynthesis.speak(test);
+          }
+
+          renderSchedule();
         } else {
           button.textContent = "🔇";
           button.classList.remove("sound-enabled");
           stopAlarm();
         }
+      });
+    }
+
+    function setupRefreshButton() {
+      const refreshButton = document.getElementById("refresh-btn");
+
+      if (!refreshButton) {
+        return;
+      }
+
+      refreshButton.addEventListener("click", () => {
+        loadSchedule({ force: true });
       });
     }
 
@@ -1556,62 +1516,6 @@
       }
 
       return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-    }
-
-    async function updateCloseStatus(recordId, close, heureFermeture) {
-      const response = await fetch("/api/schedule", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          recordId,
-          close,
-          heureFermeture
-        })
-      });
-
-      if (!response.ok) {
-        let errorDetails = null;
-
-        try {
-          errorDetails = await response.json();
-        } catch (error) {
-          errorDetails = { error: "Erreur inconnue" };
-        }
-
-        console.error(errorDetails);
-        alert("Erreur lors de la mise à jour Airtable");
-
-        throw new Error("Erreur mise à jour Airtable");
-      }
-
-      return response.json();
-    }
-
-    async function loadSchedule() {
-      try {
-        const response = await fetch("/api/schedule");
-
-        if (!response.ok) {
-          throw new Error("Erreur API");
-        }
-
-        const data = await response.json();
-
-        events = Array.isArray(data) ? data : data.events || [];
-
-        renderSchedule();
-
-      } catch (error) {
-        document.getElementById("schedule-body").innerHTML = `
-          <tr>
-            <td colspan="5" class="empty-message">
-              Erreur de chargement du schedule
-            </td>
-          </tr>
-        `;
-      }
     }
 
     function getActiveRecordId(now) {
@@ -1700,7 +1604,7 @@
       const activeRecordId = getActiveRecordId(now);
 
       let hasWarningLine = false;
-      let warningCourtText = "";
+      let warningCourtsToSpeak = [];
       let activeRowElement = null;
 
       events.forEach(event => {
@@ -1726,8 +1630,8 @@
           tr.classList.add("warning");
           hasWarningLine = true;
 
-          if (!warningCourtText) {
-            warningCourtText = event.court || "";
+          if (!acknowledgedWarningIds.has(event.id) && event.court) {
+            warningCourtsToSpeak.push(event.court);
           }
         }
 
@@ -1774,16 +1678,33 @@
 
         tbody.appendChild(tr);
 
-        const checkbox = tr.querySelector(".close-checkbox");
-        const closeTimeInput = tr.querySelector(".close-time-input");
+        tr.addEventListener("click", eventClick => {
+          const clickedInput =
+            eventClick.target.classList.contains("close-checkbox") ||
+            eventClick.target.classList.contains("close-time-input");
 
-        checkbox.addEventListener("change", async () => {
-          if (!editMode) {
+          if (clickedInput) {
             return;
           }
 
-          const previousClose = event.close;
-          const previousHeureFermeture = event.heureFermeture || "";
+          if (tr.classList.contains("warning")) {
+            acknowledgedWarningIds.add(event.id);
+
+            if ("speechSynthesis" in window) {
+              window.speechSynthesis.cancel();
+            }
+
+            renderSchedule();
+          }
+        });
+
+        const checkbox = tr.querySelector(".close-checkbox");
+        const closeTimeInput = tr.querySelector(".close-time-input");
+
+        checkbox.addEventListener("change", () => {
+          if (!editMode) {
+            return;
+          }
 
           const isChecked = checkbox.checked;
           let fermetureValue = closeTimeInput.value.trim();
@@ -1796,32 +1717,17 @@
           if (!isChecked) {
             fermetureValue = "";
             closeTimeInput.value = "";
-            event.heureFermeture = "";
           }
 
-          try {
-            tr.classList.add("saving");
+          event.close = isChecked;
+          event.heureFermeture = fermetureValue;
+          event.modifiedLocally = true;
 
-            await updateCloseStatus(event.id, isChecked, fermetureValue);
+          saveLocalState();
+          updateReportButtonState();
 
-            event.close = isChecked;
-            event.heureFermeture = fermetureValue;
-
-            updateReportButtonState();
-
-            if (isOldEvent(event) && isChecked) {
-              scheduleRemoveOldEvent(event);
-            }
-
-          } catch (error) {
-            checkbox.checked = previousClose;
-            closeTimeInput.value = previousHeureFermeture;
-            event.close = previousClose;
-            event.heureFermeture = previousHeureFermeture;
-            updateReportButtonState();
-
-          } finally {
-            tr.classList.remove("saving");
+          if (isOldEvent(event) && isChecked) {
+            scheduleRemoveOldEvent(event);
           }
         });
 
@@ -1842,61 +1748,49 @@
           closeTimeInput.value = formatTimeInput(closeTimeInput.value);
         });
 
-        closeTimeInput.addEventListener("blur", async () => {
+        closeTimeInput.addEventListener("blur", () => {
           if (!editMode) {
             isEditingCloseTime = false;
             return;
           }
 
-          const previousHeureFermeture = event.heureFermeture || "";
           const fermetureValue = closeTimeInput.value.trim();
 
-          try {
-            tr.classList.add("saving");
+          event.heureFermeture = fermetureValue;
+          event.modifiedLocally = true;
 
-            await updateCloseStatus(event.id, checkbox.checked, fermetureValue);
+          saveLocalState();
+          updateReportButtonState();
 
-            event.heureFermeture = fermetureValue;
+          isEditingCloseTime = false;
 
-            updateReportButtonState();
-
-            if (isOldEvent(event) && fermetureValue) {
-              scheduleRemoveOldEvent(event);
-            } else {
-              renderSchedule();
-            }
-
-          } catch (error) {
-            closeTimeInput.value = previousHeureFermeture;
-            updateReportButtonState();
+          if (isOldEvent(event) && fermetureValue) {
+            scheduleRemoveOldEvent(event);
+          } else {
             renderSchedule();
-
-          } finally {
-            tr.classList.remove("saving");
-            isEditingCloseTime = false;
           }
         });
 
-        closeTimeInput.addEventListener("keydown", (e) => {
+        closeTimeInput.addEventListener("keydown", eventKey => {
           if (!editMode) {
             return;
           }
 
-          if (e.key === "Enter") {
-            e.preventDefault();
+          if (eventKey.key === "Enter") {
+            eventKey.preventDefault();
             closeTimeInput.blur();
           }
 
-          if (e.key === "Escape") {
-            e.preventDefault();
+          if (eventKey.key === "Escape") {
+            eventKey.preventDefault();
             closeTimeInput.value = event.heureFermeture || "";
             closeTimeInput.blur();
           }
         });
       });
 
-      if (hasWarningLine && warningCourtText) {
-        startAlarm(warningCourtText);
+      if (hasWarningLine && warningCourtsToSpeak.length) {
+        startAlarm(warningCourtsToSpeak);
       } else {
         stopAlarm();
       }
@@ -1907,6 +1801,7 @@
 
     setupFullscreenButton();
     setupSoundButton();
+    setupRefreshButton();
     setupHiddenEditButton();
     setupReportModal();
     updateDateAndClock();
@@ -1919,12 +1814,6 @@
         renderSchedule();
       }
     }, 1000);
-
-    setInterval(() => {
-      if (!isEditingCloseTime) {
-        loadSchedule();
-      }
-    }, 60000);
   </script>
 </body>
 </html>

@@ -2,7 +2,6 @@ export default async function handler(req, res) {
   try {
     const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
     const BASE_ID = process.env.AIRTABLE_BASE_ID;
-
     const SCHEDULE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME;
     const REPORTS_TABLE_NAME = process.env.AIRTABLE_REPORTS_TABLE_NAME || "Reports";
 
@@ -12,26 +11,33 @@ export default async function handler(req, res) {
         variables: {
           AIRTABLE_TOKEN: AIRTABLE_TOKEN ? "OK" : "MANQUANT",
           AIRTABLE_BASE_ID: BASE_ID ? "OK" : "MANQUANT",
-          AIRTABLE_TABLE_NAME: SCHEDULE_TABLE_NAME ? "OK" : "MANQUANT",
-          AIRTABLE_REPORTS_TABLE_NAME: REPORTS_TABLE_NAME ? "OK" : "Reports par défaut"
+          AIRTABLE_TABLE_NAME: SCHEDULE_TABLE_NAME ? "OK" : "MANQUANT"
         }
       });
     }
+
+    if (req.method !== "POST") {
+      return res.status(405).json({
+        error: "Méthode non autorisée",
+        method: req.method
+      });
+    }
+
+    let body = req.body;
+
+    if (typeof body === "string") {
+      body = JSON.parse(body);
+    }
+
+    const date = body?.date || getTodayParis();
+    const remarque = body?.remarque || "";
+    const events = Array.isArray(body?.events) ? body.events : [];
 
     const scheduleBaseUrl =
       `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(SCHEDULE_TABLE_NAME)}`;
 
     const reportsBaseUrl =
       `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(REPORTS_TABLE_NAME)}`;
-
-    function getTodayParis() {
-      return new Intl.DateTimeFormat("fr-CA", {
-        timeZone: "Europe/Paris",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).format(new Date());
-    }
 
     async function airtableFetch(url, options = {}) {
       const response = await fetch(url, {
@@ -55,35 +61,35 @@ export default async function handler(req, res) {
       return data;
     }
 
-    async function getScheduleEvents(date) {
-      const formula = encodeURIComponent(`IS_SAME({Date}, '${date}', 'day')`);
+    async function updateScheduleEvents() {
+      const records = events
+        .filter(event => event && event.id)
+        .map(event => ({
+          id: event.id,
+          fields: {
+            Close: Boolean(event.close),
+            "Heure de fermeture": event.heureFermeture || ""
+          }
+        }));
 
-      const url =
-        `${scheduleBaseUrl}` +
-        `?filterByFormula=${formula}` +
-        `&sort%5B0%5D%5Bfield%5D=Heure` +
-        `&sort%5B0%5D%5Bdirection%5D=asc`;
+      const chunks = chunkArray(records, 10);
+      const results = [];
 
-      const data = await airtableFetch(url);
+      for (const chunk of chunks) {
+        const data = await airtableFetch(scheduleBaseUrl, {
+          method: "PATCH",
+          body: JSON.stringify({
+            records: chunk
+          })
+        });
 
-      const records = Array.isArray(data.records) ? data.records : [];
+        results.push(data);
+      }
 
-      return records.map(record => {
-        const fields = record.fields || {};
-
-        return {
-          id: record.id,
-          date: fields.Date || "",
-          heure: fields.Heure || "",
-          court: fields.Court || "",
-          feed: fields.Feed || "",
-          close: fields.Close || false,
-          heureFermeture: fields["Heure de fermeture"] || ""
-        };
-      });
+      return results;
     }
 
-    async function findReportRecord(date) {
+    async function findReportRecord() {
       const formula = encodeURIComponent(`IS_SAME({Date}, '${date}', 'day')`);
       const url = `${reportsBaseUrl}?filterByFormula=${formula}&maxRecords=1`;
 
@@ -93,97 +99,74 @@ export default async function handler(req, res) {
       return records[0] || null;
     }
 
-    async function createReportRecord(date, remarque) {
+    async function saveReportRecord() {
+      const existingReport = await findReportRecord();
+
+      if (existingReport) {
+        return airtableFetch(`${reportsBaseUrl}/${existingReport.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            fields: {
+              Remarque: remarque,
+              Envoyé: false
+            }
+          })
+        });
+      }
+
       return airtableFetch(reportsBaseUrl, {
         method: "POST",
         body: JSON.stringify({
           fields: {
             Date: date,
-            Remarque: remarque || "",
+            Remarque: remarque,
             Envoyé: false
           }
         })
       });
     }
 
-    async function updateReportRecord(recordId, remarque) {
-      return airtableFetch(`${reportsBaseUrl}/${recordId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          fields: {
-            Remarque: remarque || ""
-          }
-        })
-      });
-    }
+    const scheduleUpdates = await updateScheduleEvents();
+    const report = await saveReportRecord();
 
-    if (req.method === "GET") {
-      const date = req.query.date || getTodayParis();
-
-      const events = await getScheduleEvents(date);
-      const reportRecord = await findReportRecord(date);
-
-      return res.status(200).json({
-        ok: true,
-        date,
-        events,
-        report: reportRecord
-          ? {
-              id: reportRecord.id,
-              remarque: reportRecord.fields?.Remarque || "",
-              envoye: reportRecord.fields?.Envoyé || false,
-              dateEnvoi: reportRecord.fields?.["Date envoi"] || ""
-            }
-          : {
-              id: null,
-              remarque: "",
-              envoye: false,
-              dateEnvoi: ""
-            }
-      });
-    }
-
-    if (req.method === "POST") {
-      let body = req.body;
-
-      if (typeof body === "string") {
-        body = JSON.parse(body);
+    return res.status(200).json({
+      ok: true,
+      date,
+      updatedEvents: events.length,
+      scheduleUpdates,
+      report: {
+        id: report.id,
+        fields: report.fields
       }
-
-      const date = body?.date || getTodayParis();
-      const remarque = body?.remarque || "";
-
-      const existingReport = await findReportRecord(date);
-
-      let savedReport;
-
-      if (existingReport) {
-        savedReport = await updateReportRecord(existingReport.id, remarque);
-      } else {
-        savedReport = await createReportRecord(date, remarque);
-      }
-
-      return res.status(200).json({
-        ok: true,
-        date,
-        report: {
-          id: savedReport.id,
-          remarque: savedReport.fields?.Remarque || "",
-          envoye: savedReport.fields?.Envoyé || false,
-          dateEnvoi: savedReport.fields?.["Date envoi"] || ""
-        }
-      });
-    }
-
-    return res.status(405).json({
-      error: "Méthode non autorisée",
-      method: req.method
     });
 
   } catch (error) {
+    console.error("ERREUR API REPORT:", error);
+
     return res.status(error.status || 500).json({
       error: "Erreur serveur dans api/report.js",
-      details: error.data || error.message || error
+      message: error.message || null,
+      details: error.data || error.details || error,
+      stack: error.stack || null
     });
   }
+}
+
+function getTodayParis() {
+  return new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
+function chunkArray(array, size) {
+  const chunks = [];
+
+  for (let index = 0; index < array.length; index += size) {
+    chunks.push(array.slice(index, index + size));
+  }
+
+  return chunks;
 }

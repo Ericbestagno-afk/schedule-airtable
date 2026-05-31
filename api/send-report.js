@@ -47,6 +47,29 @@ export default async function handler(req, res) {
 
     const date = body?.date || getTodayParis();
     const remarque = body?.remarque || "";
+    const events = Array.isArray(body?.events) ? body.events : [];
+
+    if (!events.length) {
+      return res.status(400).json({
+        error: "Aucune ligne transmise depuis la page",
+        hint: "Le HTML doit envoyer events dans le body de /api/send-report."
+      });
+    }
+
+    const allClosed = events.every(event => event.close === true);
+
+    if (!allClosed) {
+      return res.status(400).json({
+        error: "Toutes les lignes du jour ne sont pas cochées",
+        eventsNotClosed: events
+          .filter(event => !event.close)
+          .map(event => ({
+            heure: event.heure,
+            court: event.court,
+            feed: event.feed
+          }))
+      });
+    }
 
     const scheduleBaseUrl =
       `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(SCHEDULE_TABLE_NAME)}`;
@@ -79,31 +102,32 @@ export default async function handler(req, res) {
       return data;
     }
 
-    async function getScheduleEvents() {
-      const formula = encodeURIComponent(`IS_SAME({Date}, '${date}', 'day')`);
+    async function updateScheduleEvents() {
+      const records = events
+        .filter(event => event && event.id)
+        .map(event => ({
+          id: event.id,
+          fields: {
+            Close: Boolean(event.close),
+            "Heure de fermeture": event.heureFermeture || ""
+          }
+        }));
 
-      const url =
-        `${scheduleBaseUrl}` +
-        `?filterByFormula=${formula}` +
-        `&sort%5B0%5D%5Bfield%5D=Heure` +
-        `&sort%5B0%5D%5Bdirection%5D=asc`;
+      const chunks = chunkArray(records, 10);
+      const results = [];
 
-      const data = await airtableFetch(url);
-      const records = Array.isArray(data.records) ? data.records : [];
+      for (const chunk of chunks) {
+        const data = await airtableFetch(scheduleBaseUrl, {
+          method: "PATCH",
+          body: JSON.stringify({
+            records: chunk
+          })
+        });
 
-      return records.map(record => {
-        const fields = record.fields || {};
+        results.push(data);
+      }
 
-        return {
-          id: record.id,
-          date: fields.Date || "",
-          heure: fields.Heure || "",
-          court: fields.Court || "",
-          feed: fields.Feed || "",
-          close: fields.Close || false,
-          heureFermeture: fields["Heure de fermeture"] || ""
-        };
-      });
+      return results;
     }
 
     async function getActiveEmails() {
@@ -155,31 +179,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const events = await getScheduleEvents();
-
-    if (!events.length) {
-      return res.status(400).json({
-        error: "Aucune ligne trouvée pour cette date",
-        date
-      });
-    }
-
-    const allClosed = events.every(event => event.close === true);
-
-    if (!allClosed) {
-      return res.status(400).json({
-        error: "Toutes les lignes du jour ne sont pas cochées",
-        date,
-        eventsNotClosed: events
-          .filter(event => !event.close)
-          .map(event => ({
-            heure: event.heure,
-            court: event.court,
-            feed: event.feed
-          }))
-      });
-    }
-
+    const scheduleUpdates = await updateScheduleEvents();
+    const savedReport = await saveReportRecord();
     const recipients = await getActiveEmails();
 
     if (!recipients.length) {
@@ -231,41 +232,29 @@ export default async function handler(req, res) {
       ]
     });
 
-    let savedReport = null;
-    let reportSaveError = null;
-
-    try {
-      savedReport = await saveReportRecord();
-    } catch (error) {
-      console.error("EMAIL GMAIL ENVOYÉ MAIS ERREUR SAUVEGARDE REPORT:", error);
-      reportSaveError = error.data || error.message || error;
-    }
-
     return res.status(200).json({
       ok: true,
       date,
       recipients,
+      updatedEvents: events.length,
+      scheduleUpdates,
       mail: {
         messageId: mailResult.messageId,
         accepted: mailResult.accepted,
         rejected: mailResult.rejected,
         response: mailResult.response
       },
-      reportSaved: Boolean(savedReport),
-      reportSaveError,
-      report: savedReport
-        ? {
-            id: savedReport.id,
-            envoye: savedReport.fields?.Envoyé || false
-          }
-        : null
+      report: {
+        id: savedReport.id,
+        envoye: savedReport.fields?.Envoyé || false
+      }
     });
 
   } catch (error) {
-    console.error("ERREUR SEND REPORT GMAIL COMPLETE:", error);
+    console.error("ERREUR SEND REPORT:", error);
 
     return res.status(error.status || 500).json({
-      error: "Erreur serveur dans api/send-report.js Gmail",
+      error: "Erreur serveur dans api/send-report.js",
       message: error.message || null,
       code: error.code || null,
       command: error.command || null,
@@ -295,11 +284,20 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function chunkArray(array, size) {
+  const chunks = [];
+
+  for (let index = 0; index < array.length; index += size) {
+    chunks.push(array.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
 function generatePdfBuffer({ date, events, remarque }) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
-      size: "A4",
-      layout: "portrait",
+      size: [595.28, 841.89],
       margin: 22
     });
 

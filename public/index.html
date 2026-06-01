@@ -924,8 +924,6 @@
     let lastWarningSignature = "";
     let speechTimeout = null;
 
-    let reportData = null;
-
     const pendingRemovalIds = new Set();
 
     function getTodayParis() {
@@ -935,6 +933,28 @@
         month: "2-digit",
         day: "2-digit"
       }).format(new Date());
+    }
+
+    function getEventDateTime(event) {
+      if (event.datetime) {
+        const directDate = new Date(event.datetime);
+
+        if (!isNaN(directDate.getTime())) {
+          return directDate;
+        }
+      }
+
+      if (!event.date || !event.heure) {
+        return null;
+      }
+
+      const time = String(event.heure).trim();
+
+      if (!/^\d{2}:\d{2}$/.test(time)) {
+        return null;
+      }
+
+      return new Date(`${event.date}T${time}:00`);
     }
 
     function getLocalStateKey() {
@@ -1530,11 +1550,12 @@
       let lastPastDiff = -Infinity;
 
       events.forEach(event => {
-        if (!event.datetime) {
+        const eventDate = getEventDateTime(event);
+
+        if (!eventDate) {
           return;
         }
 
-        const eventDate = new Date(event.datetime);
         const diff = eventDate - now;
 
         if (diff > 0 && diff < nextDiff) {
@@ -1608,11 +1629,17 @@
       let activeRowElement = null;
 
       events.forEach(event => {
-        const eventDate = new Date(event.datetime);
-        const diff = eventDate - now;
+        const eventDate = getEventDateTime(event);
+        const diff = eventDate ? eventDate - now : null;
 
-        const isLessThan2Minutes = diff > 0 && diff <= 2 * 60 * 1000;
-        const isPast = diff <= 0;
+        const isLessThan2Minutes =
+          diff !== null &&
+          diff > 0 &&
+          diff <= 2 * 60 * 1000;
+
+        const isPast =
+          diff !== null &&
+          diff <= 0;
 
         const isOldUnclosed =
           event.date &&

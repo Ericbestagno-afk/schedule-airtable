@@ -957,6 +957,28 @@
       return new Date(`${event.date}T${time}:00`);
     }
 
+    function sortEventsForDisplay(eventsToSort) {
+      return [...eventsToSort].sort((a, b) => {
+        const timeA = a.heure || "";
+        const timeB = b.heure || "";
+
+        if (timeA !== timeB) {
+          return timeA.localeCompare(timeB, "fr", {
+            numeric: true,
+            sensitivity: "base"
+          });
+        }
+
+        const courtA = a.court || "";
+        const courtB = b.court || "";
+
+        return courtA.localeCompare(courtB, "fr", {
+          numeric: true,
+          sensitivity: "base"
+        });
+      });
+    }
+
     function getLocalStateKey() {
       return `feedScheduleLocalState:${getTodayParis()}`;
     }
@@ -1231,7 +1253,7 @@
       const reportRemark = document.getElementById("report-remark");
 
       const todayParis = getTodayParis();
-      const reportEvents = getTodayEvents();
+      const reportEvents = sortEventsForDisplay(getTodayEvents());
 
       modal.classList.remove("hidden");
       reportDate.textContent = `Date : ${todayParis}`;
@@ -1282,7 +1304,7 @@
           body: JSON.stringify({
             date: todayParis,
             remarque: reportRemark.value || "",
-            events: getTodayEvents()
+            events: sortEventsForDisplay(getTodayEvents())
           })
         });
 
@@ -1327,7 +1349,7 @@
           body: JSON.stringify({
             date: todayParis,
             remarque: reportRemark.value || "",
-            events: getTodayEvents()
+            events: sortEventsForDisplay(getTodayEvents())
           })
         });
 
@@ -1628,7 +1650,7 @@
       let warningCourtsToSpeak = [];
       let activeRowElement = null;
 
-      events.forEach(event => {
+      sortEventsForDisplay(events).forEach(event => {
         const eventDate = getEventDateTime(event);
         const diff = eventDate ? eventDate - now : null;
 
